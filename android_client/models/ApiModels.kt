@@ -44,6 +44,7 @@ data class MatchesResponse(
 data class MatchData(
     @SerializedName("id") val id: Long,
     @SerializedName("sport") val sport: String,
+    @SerializedName("status") val status: String,
     @SerializedName("team_a") val teamA: TeamData,
     @SerializedName("team_b") val teamB: TeamData,
     @SerializedName("start_time") val startTime: String

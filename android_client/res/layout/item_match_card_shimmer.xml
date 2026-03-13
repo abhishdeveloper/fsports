@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- item_match_card_shimmer.xml -->
+<!-- Grey Skeleton matching the structure of item_match_card.xml -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginTop="12dp"
+    android:layout_marginBottom="4dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:strokeWidth="1dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Skeleton Header -->
+        <View
+            android:id="@+id/shimmerSportName"
+            android:layout_width="80dp"
+            android:layout_height="16dp"
+            android:background="#E0E0E0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/shimmerMatchStatus"
+            android:layout_width="60dp"
+            android:layout_height="24dp"
+            android:background="#E0E0E0"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/dividerTop"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:background="?attr/colorOutlineVariant"
+            app:layout_constraintTop_toBottomOf="@id/shimmerSportName" />
+
+        <!-- Skeleton Body: Team A vs Team B -->
+        <View
+            android:id="@+id/shimmerTeamA"
+            android:layout_width="100dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="16dp"
+            android:background="#E0E0E0"
+            app:layout_constraintEnd_toStartOf="@id/shimmerVersus"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/dividerTop" />
+
+        <View
+            android:id="@+id/shimmerVersus"
+            android:layout_width="24dp"
+            android:layout_height="16dp"
+            android:layout_marginHorizontal="16dp"
+            android:background="#E0E0E0"
+            app:layout_constraintBottom_toBottomOf="@id/shimmerTeamA"
+            app:layout_constraintEnd_toStartOf="@id/shimmerTeamB"
+            app:layout_constraintStart_toEndOf="@id/shimmerTeamA"
+            app:layout_constraintTop_toTopOf="@id/shimmerTeamA" />
+
+        <View
+            android:id="@+id/shimmerTeamB"
+            android:layout_width="100dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="16dp"
+            android:background="#E0E0E0"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/shimmerVersus"
+            app:layout_constraintTop_toBottomOf="@id/dividerTop" />
+
+        <View
+            android:id="@+id/dividerBottom"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:background="?attr/colorOutlineVariant"
+            app:layout_constraintTop_toBottomOf="@id/shimmerTeamA" />
+
+        <!-- Skeleton Footer: Start Time -->
+        <View
+            android:id="@+id/shimmerTimeIcon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="12dp"
+            android:background="#E0E0E0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/dividerBottom" />
+
+        <View
+            android:id="@+id/shimmerStartTime"
+            android:layout_width="150dp"
+            android:layout_height="14dp"
+            android:layout_marginStart="8dp"
+            android:background="#E0E0E0"
+            app:layout_constraintBottom_toBottomOf="@id/shimmerTimeIcon"
+            app:layout_constraintStart_toEndOf="@id/shimmerTimeIcon"
+            app:layout_constraintTop_toTopOf="@id/shimmerTimeIcon" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

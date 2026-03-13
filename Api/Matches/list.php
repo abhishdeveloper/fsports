@@ -66,6 +66,7 @@ try {
         $formattedMatch = [
             'id' => $match['match_id'],
             'sport' => $match['sport_name'],
+            'status' => $status,
             'team_a' => [
                 'name' => $match['team_a_name'],
                 'branch' => $match['team_a_branch']
