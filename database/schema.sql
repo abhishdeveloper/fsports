@@ -10,6 +10,8 @@ CREATE TABLE `users` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `username` VARCHAR(50) NOT NULL,
   `email` VARCHAR(255) NOT NULL,
+  `roll_number` VARCHAR(50) NOT NULL,
+  `branch` VARCHAR(100) NOT NULL,
   `password_hash` VARCHAR(255) NOT NULL, -- Specifically accommodated for Argon2id
   `total_coins` INT NOT NULL DEFAULT 1000,
   `role` ENUM('admin', 'user') NOT NULL DEFAULT 'user',
@@ -18,7 +20,8 @@ CREATE TABLE `users` (
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_username` (`username`),
-  UNIQUE KEY `idx_email` (`email`)
+  UNIQUE KEY `idx_email` (`email`),
+  UNIQUE KEY `idx_roll_number` (`roll_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
