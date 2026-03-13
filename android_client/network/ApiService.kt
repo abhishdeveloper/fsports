@@ -51,4 +51,10 @@ interface ApiService {
      */
     @POST("Api/Predictions/submit_bulk.php")
     suspend fun submitBulkPredictions(@Body requests: List<PredictionRequest>): Response<GenericResponse>
+
+    /**
+     * Fetches the top 50 users ranked by total coins.
+     */
+    @GET("Api/Leaderboard/top.php")
+    suspend fun getLeaderboard(): Response<LeaderboardResponse>
 }

@@ -79,3 +79,15 @@ data class PredictionRequest(
     @SerializedName("question_id") val questionId: Long,
     @SerializedName("selected_option") val selectedOption: String // Expected values: "A", "B", "C", "D"
 )
+
+// Leaderboard Top Request (top.php)
+data class LeaderboardResponse(
+    @SerializedName("data") val data: List<LeaderboardUser>
+)
+
+data class LeaderboardUser(
+    @SerializedName("rank") val rank: Int,
+    @SerializedName("username") val username: String,
+    @SerializedName("branch") val branch: String,
+    @SerializedName("total_coins") val totalCoins: Long
+)
