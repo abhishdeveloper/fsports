@@ -40,9 +40,15 @@ interface ApiService {
     suspend fun getQuestions(@Query("match_id") matchId: Long): Response<QuestionsResponse>
 
     /**
-     * Submits a prediction for a question.
+     * Submits a single prediction for a question.
      * Validates on the backend if the match is still upcoming and the user hasn't already bet.
      */
     @POST("Api/Predictions/submit.php")
     suspend fun submitPrediction(@Body request: PredictionRequest): Response<GenericResponse>
+
+    /**
+     * Submits a batch of predictions securely wrapped in a backend PDO transaction.
+     */
+    @POST("Api/Predictions/submit_bulk.php")
+    suspend fun submitBulkPredictions(@Body requests: List<PredictionRequest>): Response<GenericResponse>
 }

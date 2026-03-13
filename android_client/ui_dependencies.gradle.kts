@@ -22,4 +22,7 @@ dependencies {
 
     // Coil (Coroutine Image Loader)
     implementation("io.coil-kt:coil:2.4.0")
+
+    // Lottie (Premium Success Animations)
+    implementation("com.airbnb.android:lottie:6.1.0")
 }

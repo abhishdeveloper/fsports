@@ -67,8 +67,11 @@ data class QuestionData(
     @SerializedName("option_b") val optionB: String,
     @SerializedName("option_c") val optionC: String?,
     @SerializedName("option_d") val optionD: String?,
-    @SerializedName("points_multiplier") val pointsMultiplier: Double
-    // Note: 'correct_option' is intentionally omitted by the backend for security.
+    @SerializedName("points_multiplier") val pointsMultiplier: Double,
+
+    // Mutable property to track user selection in the RecyclerView.
+    // @Transient ensures Gson completely ignores it during serialization/deserialization.
+    @Transient var userSelectedOption: String? = null
 )
 
 // Prediction Submission Request (submit.php)
