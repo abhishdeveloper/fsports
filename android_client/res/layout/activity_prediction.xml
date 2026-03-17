@@ -48,6 +48,17 @@
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/item_question_card" />
 
+        <!-- Empty & Error States -->
+        <include
+            android:id="@+id/layoutEmpty"
+            layout="@layout/layout_empty_state"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/layoutError"
+            layout="@layout/layout_error_state"
+            android:visibility="gone" />
+
     </FrameLayout>
 
     <!-- Floating action button pinned to bottom for submission -->

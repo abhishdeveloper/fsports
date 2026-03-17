@@ -116,6 +116,31 @@ data class LeaderboardUser(
     @SerializedName("total_coins") val totalCoins: Long
 )
 
+// Profile & History Models (history.php)
+data class ProfileResponse(
+    @SerializedName("profile") val profile: UserProfile,
+    @SerializedName("history") val history: List<PredictionHistoryItem>
+)
+
+data class UserProfile(
+    @SerializedName("username") val username: String,
+    @SerializedName("branch") val branch: String,
+    @SerializedName("total_coins") val totalCoins: Long,
+    @SerializedName("global_rank") val globalRank: Int
+)
+
+data class PredictionHistoryItem(
+    @SerializedName("prediction_id") val predictionId: Long,
+    @SerializedName("match_name") val matchName: String,
+    @SerializedName("sport_name") val sportName: String,
+    @SerializedName("question_text") val questionText: String,
+    @SerializedName("selected_answer") val selectedAnswer: String?,
+    @SerializedName("correct_answer") val correctAnswer: String?, // Nullable: Might be pending
+    @SerializedName("status") val status: String, // "pending", "won", "lost"
+    @SerializedName("points_multiplier") val pointsMultiplier: Double,
+    @SerializedName("locked_at") val lockedAt: String
+)
+
 // Admin Flow Models
 data class CreateMatchRequest(
     @SerializedName("sport_id") val sportId: Long,

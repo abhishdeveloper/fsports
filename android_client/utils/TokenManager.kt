@@ -17,6 +17,7 @@ object TokenManager {
     private const val KEY_USER_ROLE = "user_role"
 
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var appContext: Context
     private var isInitialized = false
 
     /**
@@ -27,6 +28,7 @@ object TokenManager {
      */
     fun init(context: Context) {
         if (isInitialized) return
+        appContext = context.applicationContext
 
         // Create a MasterKey for encryption/decryption using AES256-GCM
         val masterKey = MasterKey.Builder(context.applicationContext)
@@ -45,6 +47,15 @@ object TokenManager {
         )
 
         isInitialized = true
+    }
+
+    /**
+     * Provides access to the initialized application context.
+     * Used primarily by network interceptors to show Toasts and launch activities.
+     */
+    fun getContext(): Context {
+        checkInitialization()
+        return appContext
     }
 
     /**

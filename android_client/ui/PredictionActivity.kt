@@ -53,6 +53,10 @@ class PredictionActivity : AppCompatActivity() {
         observeQuestionsState()
         observeSubmissionState()
 
+        binding.layoutError.btnRetry.setOnClickListener {
+            viewModel.fetchQuestions(matchId)
+        }
+
         // Fetch questions initially
         viewModel.fetchQuestions(matchId)
     }
@@ -104,22 +108,36 @@ class PredictionActivity : AppCompatActivity() {
                 viewModel.uiState.collect { state ->
                     when (state) {
                         is QuestionsUiState.Loading -> {
-                            binding.progressBar.visibility = View.VISIBLE
+                            binding.layoutError.root.visibility = View.GONE
+                            binding.layoutEmpty.root.visibility = View.GONE
                             binding.recyclerViewQuestions.visibility = View.GONE
+
+                            binding.progressBar.visibility = View.VISIBLE
                         }
                         is QuestionsUiState.Success -> {
                             binding.progressBar.visibility = View.GONE
-                            binding.recyclerViewQuestions.visibility = View.VISIBLE
-                            adapter.submitList(state.questions)
+                            binding.layoutError.root.visibility = View.GONE
+
+                            if (state.questions.isEmpty()) {
+                                binding.recyclerViewQuestions.visibility = View.GONE
+                                binding.btnLockPredictions.visibility = View.GONE
+                                binding.layoutEmpty.root.visibility = View.VISIBLE
+                                binding.layoutEmpty.tvEmptyMessage.text = "No questions available for this match yet."
+                            } else {
+                                binding.layoutEmpty.root.visibility = View.GONE
+                                binding.recyclerViewQuestions.visibility = View.VISIBLE
+                                binding.btnLockPredictions.visibility = View.VISIBLE
+                                adapter.submitList(state.questions)
+                            }
                         }
                         is QuestionsUiState.Error -> {
                             binding.progressBar.visibility = View.GONE
-                            Snackbar.make(binding.root, state.message, Snackbar.LENGTH_INDEFINITE)
-                                .setAction("Retry") {
-                                    val matchId = intent.getLongExtra("EXTRA_MATCH_ID", -1L)
-                                    viewModel.fetchQuestions(matchId)
-                                }
-                                .show()
+                            binding.recyclerViewQuestions.visibility = View.GONE
+                            binding.btnLockPredictions.visibility = View.GONE
+                            binding.layoutEmpty.root.visibility = View.GONE
+
+                            binding.layoutError.root.visibility = View.VISIBLE
+                            binding.layoutError.tvErrorMessage.text = state.message
                         }
                     }
                 }

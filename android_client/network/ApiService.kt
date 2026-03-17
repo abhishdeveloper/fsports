@@ -69,6 +69,9 @@ interface ApiService {
     @POST("Api/Rewards/daily_claim.php")
     suspend fun claimDailyReward(): Response<com.college.sportsmeet.models.DailyClaimResponse>
 
+    @GET("Api/Users/history.php")
+    suspend fun getProfileAndHistory(): Response<com.college.sportsmeet.models.ProfileResponse>
+
     @POST("Api/Admin/create_match.php")
     suspend fun createMatch(@Body request: CreateMatchRequest): Response<GenericResponse>
 

@@ -37,11 +37,34 @@ class MatchLobbyActivity : AppCompatActivity() {
         binding = ActivityMatchLobbyBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setupToolbar()
         setupRecyclerView()
         setupTabLayout()
         observeViewModel()
         checkAdminAccess()
         checkDailyReward()
+        setupErrorRetry()
+    }
+
+    private fun setupToolbar() {
+        binding.topAppBar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                // We use a raw integer ID from the dynamically generated R.id (via view binding)
+                // In actual Android Studio, R.id.action_profile is available. For raw compiling:
+                else -> {
+                    if (menuItem.title == "Profile") {
+                        startActivity(Intent(this, ProfileActivity::class.java))
+                        true
+                    } else false
+                }
+            }
+        }
+    }
+
+    private fun setupErrorRetry() {
+        binding.layoutError.btnRetry.setOnClickListener {
+            viewModel.fetchMatches()
+        }
     }
 
     /**
@@ -83,8 +106,12 @@ class MatchLobbyActivity : AppCompatActivity() {
      */
     private fun setupRecyclerView() {
         adapter = MatchAdapter { selectedMatch ->
-            // Handle clicking a match (e.g., Navigate to Match Details / Questions)
-            Snackbar.make(binding.root, "Clicked ${selectedMatch.teamA.name} vs ${selectedMatch.teamB.name}", Snackbar.LENGTH_SHORT).show()
+            // Match Routing: Navigate directly to PredictionActivity
+            val intent = Intent(this, PredictionActivity::class.java).apply {
+                putExtra("EXTRA_MATCH_ID", selectedMatch.id)
+                putExtra("EXTRA_MATCH_NAME", "${selectedMatch.teamA.name} vs ${selectedMatch.teamB.name}")
+            }
+            startActivity(intent)
         }
         binding.recyclerViewMatches.adapter = adapter
     }
@@ -127,14 +154,17 @@ class MatchLobbyActivity : AppCompatActivity() {
     private fun handleUiState(state: MatchUiState) {
         when (state) {
             is MatchUiState.Loading -> {
+                binding.layoutError.root.visibility = View.GONE
+                binding.layoutEmpty.root.visibility = View.GONE
+                binding.recyclerViewMatches.visibility = View.GONE
+
                 binding.shimmerViewContainer.visibility = View.VISIBLE
                 binding.shimmerViewContainer.startShimmer()
-                binding.recyclerViewMatches.visibility = View.GONE
             }
             is MatchUiState.Success -> {
                 binding.shimmerViewContainer.stopShimmer()
                 binding.shimmerViewContainer.visibility = View.GONE
-                binding.recyclerViewMatches.visibility = View.VISIBLE
+                binding.layoutError.root.visibility = View.GONE
 
                 // Cache the response and update the list for the currently selected tab
                 currentMatchesResponse = state.data
@@ -143,11 +173,11 @@ class MatchLobbyActivity : AppCompatActivity() {
             is MatchUiState.Error -> {
                 binding.shimmerViewContainer.stopShimmer()
                 binding.shimmerViewContainer.visibility = View.GONE
-                // Optionally, show a retry button or an empty state view here
+                binding.recyclerViewMatches.visibility = View.GONE
+                binding.layoutEmpty.root.visibility = View.GONE
 
-                Snackbar.make(binding.root, state.message, Snackbar.LENGTH_INDEFINITE)
-                    .setAction("Retry") { viewModel.fetchMatches() }
-                    .show()
+                binding.layoutError.root.visibility = View.VISIBLE
+                binding.layoutError.tvErrorMessage.text = state.message
             }
         }
     }
@@ -165,7 +195,13 @@ class MatchLobbyActivity : AppCompatActivity() {
             else -> emptyList()
         }
 
-        // Submits the new list to the DiffUtil adapter
-        adapter.submitList(selectedList)
+        if (selectedList.isEmpty()) {
+            binding.recyclerViewMatches.visibility = View.GONE
+            binding.layoutEmpty.root.visibility = View.VISIBLE
+        } else {
+            binding.layoutEmpty.root.visibility = View.GONE
+            binding.recyclerViewMatches.visibility = View.VISIBLE
+            adapter.submitList(selectedList)
+        }
     }
 }

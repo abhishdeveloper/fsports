@@ -1,5 +1,10 @@
 package com.college.sportsmeet.network
 
+import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
+import com.college.sportsmeet.ui.LoginActivity
 import com.college.sportsmeet.utils.TokenManager
 import okhttp3.CertificatePinner
 import okhttp3.Interceptor
@@ -89,7 +94,28 @@ object ApiClient {
                 originalRequest // Proceed without token (let the backend return 401)
             }
 
-            return chain.proceed(modifiedRequest)
+            val response = chain.proceed(modifiedRequest)
+
+            // Global 401 Unauthorized Interceptor
+            // Automatically log out the user if their JWT is expired/invalid
+            if (response.code == 401) {
+                TokenManager.clearAuthData()
+
+                val context = TokenManager.getContext()
+
+                // Display Toast on the Main Thread
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(context, "Session expired. Please log in again.", Toast.LENGTH_LONG).show()
+                }
+
+                // Bounce back to Login Screen, clearing the backstack
+                val intent = Intent(context, LoginActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                }
+                context.startActivity(intent)
+            }
+
+            return response
         }
     }
 }

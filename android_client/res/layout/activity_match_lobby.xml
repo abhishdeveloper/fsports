@@ -19,7 +19,8 @@
             app:title="Match Lobby"
             app:titleCentered="true"
             app:titleTextAppearance="?attr/textAppearanceHeadline6"
-            app:titleTextColor="?attr/colorOnSurface" />
+            app:titleTextColor="?attr/colorOnSurface"
+            app:menu="@menu/menu_lobby" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabLayout"
@@ -93,6 +94,17 @@
             android:visibility="gone"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/item_match_card" />
+
+        <!-- Empty & Error States -->
+        <include
+            android:id="@+id/layoutEmpty"
+            layout="@layout/layout_empty_state"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/layoutError"
+            layout="@layout/layout_error_state"
+            android:visibility="gone" />
 
     </FrameLayout>
 
