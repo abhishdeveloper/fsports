@@ -1,9 +1,12 @@
 package com.college.sportsmeet.repository
 
+import com.college.sportsmeet.models.CreateMatchRequest
 import com.college.sportsmeet.models.GenericResponse
 import com.college.sportsmeet.models.MatchesResponse
 import com.college.sportsmeet.models.PredictionRequest
 import com.college.sportsmeet.models.QuestionsResponse
+import com.college.sportsmeet.models.SportsResponse
+import com.college.sportsmeet.models.TeamsResponse
 import com.college.sportsmeet.network.ApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -44,6 +47,101 @@ class MatchRepository(private val apiService: ApiService) {
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.getQuestions(matchId)
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: response.message()
+                    Result.failure(Exception(errorMsg))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Admin: Fetches sports list for dropdowns.
+     */
+    suspend fun fetchSports(): Result<SportsResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getSports()
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: response.message()
+                    Result.failure(Exception(errorMsg))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Admin: Fetches teams list for dropdowns.
+     */
+    suspend fun fetchTeams(): Result<TeamsResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getTeams()
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: response.message()
+                    Result.failure(Exception(errorMsg))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Admin: Creates a new match.
+     */
+    suspend fun createMatch(request: CreateMatchRequest): Result<GenericResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.createMatch(request)
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: response.message()
+                    Result.failure(Exception(errorMsg))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Admin: Updates match status dynamically.
+     */
+    suspend fun updateMatchStatus(request: com.college.sportsmeet.models.UpdateStatusRequest): Result<GenericResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.updateMatchStatus(request)
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: response.message()
+                    Result.failure(Exception(errorMsg))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Admin: Resolves match by passing the map of correct answers securely.
+     */
+    suspend fun resolveMatch(request: com.college.sportsmeet.models.ResolveMatchRequest): Result<GenericResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.resolveMatch(request)
                 if (response.isSuccessful && response.body() != null) {
                     Result.success(response.body()!!)
                 } else {

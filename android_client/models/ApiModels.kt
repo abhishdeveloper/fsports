@@ -22,6 +22,7 @@ data class LoginResponse(
     @SerializedName("message") val message: String?,
     @SerializedName("access_token") val accessToken: String?,
     @SerializedName("expires_in") val expiresIn: Long?,
+    @SerializedName("role") val role: String?,
     @SerializedName("error") val error: String?
 )
 
@@ -90,4 +91,41 @@ data class LeaderboardUser(
     @SerializedName("username") val username: String,
     @SerializedName("branch") val branch: String,
     @SerializedName("total_coins") val totalCoins: Long
+)
+
+// Admin Flow Models
+data class CreateMatchRequest(
+    @SerializedName("sport_id") val sportId: Long,
+    @SerializedName("team_a_id") val teamAId: Long,
+    @SerializedName("team_b_id") val teamBId: Long,
+    @SerializedName("start_time") val startTime: String // Expected format: "YYYY-MM-DD HH:MM:SS"
+)
+
+data class UpdateStatusRequest(
+    @SerializedName("match_id") val matchId: Long,
+    @SerializedName("new_status") val newStatus: String // "upcoming", "live", "completed", "cancelled"
+)
+
+data class ResolveMatchRequest(
+    @SerializedName("match_id") val matchId: Long,
+    @SerializedName("resolutions") val resolutions: Map<String, String> // Maps questionId string to correctOption (e.g. "12" to "A")
+)
+
+data class SportsResponse(
+    @SerializedName("data") val data: List<SportData>
+)
+
+data class SportData(
+    @SerializedName("id") val id: Long,
+    @SerializedName("sport_name") val sportName: String
+)
+
+data class TeamsResponse(
+    @SerializedName("data") val data: List<TeamDataFull>
+)
+
+data class TeamDataFull(
+    @SerializedName("id") val id: Long,
+    @SerializedName("team_name") val teamName: String,
+    @SerializedName("branch_name") val branchName: String?
 )

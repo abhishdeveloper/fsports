@@ -14,6 +14,7 @@ object TokenManager {
 
     private const val PREFS_FILENAME = "secure_token_prefs"
     private const val KEY_ACCESS_TOKEN = "access_token"
+    private const val KEY_USER_ROLE = "user_role"
 
     private lateinit var sharedPreferences: SharedPreferences
     private var isInitialized = false
@@ -69,12 +70,35 @@ object TokenManager {
     }
 
     /**
-     * Clears the stored JWT Access Token securely (e.g., on logout).
+     * Securely stores the user's role.
+     *
+     * @param role The role string (e.g., 'admin' or 'user')
      */
-    fun clearAccessToken() {
+    fun saveUserRole(role: String) {
+        checkInitialization()
+        sharedPreferences.edit()
+            .putString(KEY_USER_ROLE, role)
+            .apply()
+    }
+
+    /**
+     * Retrieves the stored user role.
+     *
+     * @return The role string if it exists, otherwise null
+     */
+    fun getUserRole(): String? {
+        checkInitialization()
+        return sharedPreferences.getString(KEY_USER_ROLE, null)
+    }
+
+    /**
+     * Clears all stored auth data securely (e.g., on logout).
+     */
+    fun clearAuthData() {
         checkInitialization()
         sharedPreferences.edit()
             .remove(KEY_ACCESS_TOKEN)
+            .remove(KEY_USER_ROLE)
             .apply()
     }
 

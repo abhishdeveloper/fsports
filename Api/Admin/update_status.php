@@ -1,0 +1,72 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Api\Admin;
+
+use App\Config\Database;
+use App\Api\Utils\Response;
+use PDO;
+use Exception;
+
+// Bootstrap Application
+require_once __DIR__ . '/../../bootstrap.php';
+require_once __DIR__ . '/../Middleware/auth_middleware.php';
+
+use function App\Api\Middleware\authenticateJWT;
+
+if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    Response::json(405, ['error' => 'Method Not Allowed']);
+}
+
+$userPayload = authenticateJWT();
+$userId = (int)($userPayload['sub'] ?? 0);
+
+if (!$userId) {
+    Response::json(401, ['error' => 'Invalid authentication token payload.']);
+}
+
+$inputJSON = file_get_contents('php://input');
+$input = json_decode($inputJSON, true);
+
+if (!$input) {
+    Response::json(400, ['error' => 'Invalid JSON payload.']);
+}
+
+$matchId = filter_var($input['match_id'] ?? null, FILTER_VALIDATE_INT);
+$newStatus = trim((string)($input['new_status'] ?? ''));
+
+$allowedStatuses = ['upcoming', 'live', 'completed', 'cancelled'];
+
+if (!$matchId || !in_array($newStatus, $allowedStatuses, true)) {
+    Response::json(400, ['error' => "Valid match_id and new_status (upcoming, live, completed, cancelled) are required."]);
+}
+
+try {
+    $pdo = Database::getConnection();
+
+    // Verify Admin Role
+    $stmtAdmin = $pdo->prepare("SELECT role FROM users WHERE id = :id LIMIT 1");
+    $stmtAdmin->execute([':id' => $userId]);
+    $user = $stmtAdmin->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user || $user['role'] !== 'admin') {
+        Response::json(403, ['error' => 'Forbidden: You do not have admin privileges.']);
+    }
+
+    $updateStmt = $pdo->prepare("UPDATE matches SET match_status = :new_status WHERE id = :match_id");
+    $updateStmt->execute([
+        ':new_status' => $newStatus,
+        ':match_id' => $matchId
+    ]);
+
+    if ($updateStmt->rowCount() === 0) {
+         Response::json(404, ['error' => 'Match not found or status already matches the requested state.']);
+    }
+
+    Response::json(200, ['message' => "Match status updated to '$newStatus'."]);
+
+} catch (Exception $e) {
+    error_log("Admin Update Match Status Error: " . $e->getMessage());
+    Response::json(500, ['error' => 'An internal server error occurred while updating the match status.']);
+}

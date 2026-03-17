@@ -52,7 +52,7 @@ try {
     $pdo = Database::getConnection();
 
     // Verify User and Password
-    $stmt = $pdo->prepare("SELECT id, username, password_hash, account_status FROM users WHERE email = :email LIMIT 1");
+    $stmt = $pdo->prepare("SELECT id, username, password_hash, account_status, role FROM users WHERE email = :email LIMIT 1");
     $stmt->execute([':email' => $email]);
     $user = $stmt->fetch();
 
@@ -120,7 +120,8 @@ try {
     Response::json(200, [
         'message' => 'Login successful',
         'access_token' => $accessToken,
-        'expires_in' => 15 * 60 // seconds
+        'expires_in' => 15 * 60, // seconds
+        'role' => $user['role']
     ]);
 
 } catch (PDOException $e) {

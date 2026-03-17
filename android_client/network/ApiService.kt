@@ -57,4 +57,21 @@ interface ApiService {
      */
     @GET("Api/Leaderboard/top.php")
     suspend fun getLeaderboard(): Response<LeaderboardResponse>
+
+    // --- Admin Endpoints ---
+
+    @GET("Api/Matches/sports.php")
+    suspend fun getSports(): Response<SportsResponse>
+
+    @GET("Api/Matches/teams.php")
+    suspend fun getTeams(): Response<TeamsResponse>
+
+    @POST("Api/Admin/create_match.php")
+    suspend fun createMatch(@Body request: CreateMatchRequest): Response<GenericResponse>
+
+    @POST("Api/Admin/update_status.php")
+    suspend fun updateMatchStatus(@Body request: UpdateStatusRequest): Response<GenericResponse>
+
+    @POST("Api/Admin/resolve_match.php")
+    suspend fun resolveMatch(@Body request: ResolveMatchRequest): Response<GenericResponse>
 }

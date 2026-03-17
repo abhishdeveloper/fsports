@@ -8,9 +8,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.college.sportsmeet.databinding.ActivityMatchLobbyBinding
+import android.content.Intent
 import com.college.sportsmeet.models.MatchesResponse
 import com.college.sportsmeet.network.ApiClient
 import com.college.sportsmeet.repository.MatchRepository
+import com.college.sportsmeet.utils.TokenManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.launch
@@ -38,6 +40,23 @@ class MatchLobbyActivity : AppCompatActivity() {
         setupRecyclerView()
         setupTabLayout()
         observeViewModel()
+        checkAdminAccess()
+    }
+
+    /**
+     * Role-Based Access Control: Reveals the Admin Command Center FAB if role is 'admin'.
+     */
+    private fun checkAdminAccess() {
+        val role = TokenManager.getUserRole()
+        if (role == "admin") {
+            binding.fabAdmin.visibility = View.VISIBLE
+            binding.fabAdmin.setOnClickListener {
+                // Navigate to Admin Dashboard (Placeholder for now)
+                startActivity(Intent(this, AdminDashboardActivity::class.java))
+            }
+        } else {
+            binding.fabAdmin.visibility = View.GONE
+        }
     }
 
     /**
