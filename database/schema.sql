@@ -123,6 +123,40 @@ CREATE TABLE `predictions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
+-- Rewards Table (Phase 12 Campus Economy)
+-- --------------------------------------------------------
+CREATE TABLE `rewards` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(100) NOT NULL,
+  `description` TEXT NOT NULL,
+  `cost` INT UNSIGNED NOT NULL,
+  `stock_quantity` INT UNSIGNED NOT NULL DEFAULT 0,
+  `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_is_active` (`is_active`),
+  KEY `idx_stock_quantity` (`stock_quantity`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Redemptions Table (Phase 12 Campus Economy)
+-- --------------------------------------------------------
+CREATE TABLE `redemptions` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  `reward_id` INT UNSIGNED NOT NULL,
+  `redemption_code` VARCHAR(8) NOT NULL,
+  `status` ENUM('active', 'claimed') NOT NULL DEFAULT 'active',
+  `redeemed_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_redemption_code` (`redemption_code`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`),
+  CONSTRAINT `fk_redemption_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_redemption_reward` FOREIGN KEY (`reward_id`) REFERENCES `rewards` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
 -- Security Logs Table
 -- --------------------------------------------------------
 CREATE TABLE `security_logs` (

@@ -177,3 +177,42 @@ data class TeamDataFull(
     @SerializedName("team_name") val teamName: String,
     @SerializedName("branch_name") val branchName: String?
 )
+
+// Campus Economy Models (Phase 12)
+data class RewardsResponse(
+    @SerializedName("data") val data: List<RewardData>
+)
+
+data class RewardData(
+    @SerializedName("id") val id: Long,
+    @SerializedName("title") val title: String,
+    @SerializedName("description") val description: String,
+    @SerializedName("cost") val cost: Long,
+    @SerializedName("stock_quantity") val stockQuantity: Int
+)
+
+data class RedeemRequest(
+    @SerializedName("reward_id") val rewardId: Long
+)
+
+data class RedeemResponse(
+    @SerializedName("message") val message: String?,
+    @SerializedName("redemption_code") val redemptionCode: String?,
+    @SerializedName("error") val error: String?
+)
+
+data class MyPassesResponse(
+    @SerializedName("data") val data: List<PassData>
+)
+
+data class PassData(
+    @SerializedName("redemption_code") val redemptionCode: String,
+    @SerializedName("status") val status: String, // 'active' or 'claimed'
+    @SerializedName("title") val title: String,
+    @SerializedName("description") val description: String,
+    @SerializedName("redeemed_at") val redeemedAt: String
+)
+
+data class ClaimRewardRequest(
+    @SerializedName("redemption_code") val redemptionCode: String
+)

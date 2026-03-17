@@ -2,6 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_rewards"
+        android:title="Rewards Store"
+        android:icon="@android:drawable/star_on"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/action_profile"
         android:title="Profile"
         android:icon="@android:drawable/ic_menu_myplaces"

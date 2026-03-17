@@ -80,4 +80,17 @@ interface ApiService {
 
     @POST("Api/Admin/resolve_match.php")
     suspend fun resolveMatch(@Body request: ResolveMatchRequest): Response<GenericResponse>
+
+    // --- Campus Economy Endpoints (Phase 12) ---
+    @GET("Api/Store/list.php")
+    suspend fun getRewards(): Response<com.college.sportsmeet.models.RewardsResponse>
+
+    @POST("Api/Store/redeem.php")
+    suspend fun redeemReward(@Body request: com.college.sportsmeet.models.RedeemRequest): Response<com.college.sportsmeet.models.RedeemResponse>
+
+    @GET("Api/Store/my_passes.php")
+    suspend fun getMyPasses(): Response<com.college.sportsmeet.models.MyPassesResponse>
+
+    @POST("Api/Admin/claim_reward.php")
+    suspend fun adminClaimReward(@Body request: com.college.sportsmeet.models.ClaimRewardRequest): Response<GenericResponse>
 }

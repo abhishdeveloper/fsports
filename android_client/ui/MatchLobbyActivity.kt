@@ -52,7 +52,10 @@ class MatchLobbyActivity : AppCompatActivity() {
                 // We use a raw integer ID from the dynamically generated R.id (via view binding)
                 // In actual Android Studio, R.id.action_profile is available. For raw compiling:
                 else -> {
-                    if (menuItem.title == "Profile") {
+                    if (menuItem.title == "Rewards Store") {
+                        startActivity(Intent(this, RewardsStoreActivity::class.java))
+                        true
+                    } else if (menuItem.title == "Profile") {
                         startActivity(Intent(this, ProfileActivity::class.java))
                         true
                     } else false
