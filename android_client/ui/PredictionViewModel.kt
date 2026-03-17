@@ -23,7 +23,7 @@ sealed class QuestionsUiState {
 sealed class SubmissionState {
     object Idle : SubmissionState()
     object Submitting : SubmissionState()
-    object Success : SubmissionState()
+    data class Success(val rivalryStats: Map<String, com.college.sportsmeet.models.RivalryStat>?) : SubmissionState()
     data class Error(val message: String) : SubmissionState()
 }
 
@@ -64,8 +64,8 @@ class PredictionViewModel(private val matchRepository: MatchRepository) : ViewMo
 
             val result = matchRepository.submitBulkPredictions(predictions)
 
-            result.onSuccess {
-                _submissionState.emit(SubmissionState.Success)
+            result.onSuccess { response ->
+                _submissionState.emit(SubmissionState.Success(response.rivalryStats))
             }.onFailure { exception ->
                 _submissionState.emit(
                     SubmissionState.Error(exception.localizedMessage ?: "Submission failed.")

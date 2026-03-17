@@ -111,11 +111,57 @@ try {
         }
     }
 
+    // Calculate Rivalry Stats (Percentage Split) to return for the locked questions
+    $stats = [];
+    if (!empty($predictions)) {
+        $qIds = array_map(fn($p) => (int)$p['question_id'], $predictions);
+        $placeholders = implode(',', array_fill(0, count($qIds), '?'));
+
+        $statsStmt = $pdo->prepare("
+            SELECT
+                question_id,
+                selected_option,
+                COUNT(*) as count
+            FROM predictions
+            WHERE question_id IN ($placeholders)
+            GROUP BY question_id, selected_option
+        ");
+        $statsStmt->execute($qIds);
+        $results = $statsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Group counts by question_id
+        $groupedCounts = [];
+        foreach ($results as $row) {
+            $qId = $row['question_id'];
+            if (!isset($groupedCounts[$qId])) {
+                $groupedCounts[$qId] = ['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'total' => 0];
+            }
+            $groupedCounts[$qId][$row['selected_option']] = (int)$row['count'];
+            $groupedCounts[$qId]['total'] += (int)$row['count'];
+        }
+
+        // Calculate percentages
+        foreach ($groupedCounts as $qId => $counts) {
+            $total = $counts['total'];
+            if ($total > 0) {
+                $stats[$qId] = [
+                    'A' => round(($counts['A'] / $total) * 100),
+                    'B' => round(($counts['B'] / $total) * 100),
+                    'C' => round(($counts['C'] / $total) * 100),
+                    'D' => round(($counts['D'] / $total) * 100)
+                ];
+            }
+        }
+    }
+
     // Commit Transaction if all predictions were valid and successfully inserted
     $pdo->commit();
 
     logSecurityEvent($pdo, $ipAddress, $requestUri, 'success');
-    Response::json(201, ['message' => 'Predictions locked successfully.']);
+    Response::json(201, [
+        'message' => 'Predictions locked successfully.',
+        'rivalry_stats' => $stats
+    ]);
 
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) {

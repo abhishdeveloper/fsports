@@ -25,4 +25,7 @@ dependencies {
 
     // Lottie (Premium Success Animations)
     implementation("com.airbnb.android:lottie:6.1.0")
+
+    // Konfetti (Particle Explosions)
+    implementation("nl.dionsegijn:konfetti-xml:3.0.1")
 }

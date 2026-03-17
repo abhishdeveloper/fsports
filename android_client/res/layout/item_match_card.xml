@@ -56,6 +56,33 @@
             android:background="?attr/colorOutlineVariant"
             app:layout_constraintTop_toBottomOf="@id/tvSportName" />
 
+        <!-- Trending Indicator -->
+        <LinearLayout
+            android:id="@+id/llTrending"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/dividerTop">
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/bg_pulsing_dot"
+                android:backgroundTint="?attr/colorError" />
+
+            <TextView
+                android:id="@+id/tvTrendingCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorError"
+                tools:text="🔥 450+ predictions locked!" />
+        </LinearLayout>
+
         <!-- Match Body: Team A vs Team B -->
         <TextView
             android:id="@+id/tvTeamA"
@@ -68,7 +95,7 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@id/tvVersus"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/dividerTop"
+            app:layout_constraintTop_toBottomOf="@id/llTrending"
             tools:text="Computer Science" />
 
         <TextView
@@ -95,7 +122,7 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/tvVersus"
-            app:layout_constraintTop_toBottomOf="@id/dividerTop"
+            app:layout_constraintTop_toBottomOf="@id/llTrending"
             tools:text="Mechanical Engineering" />
 
         <View

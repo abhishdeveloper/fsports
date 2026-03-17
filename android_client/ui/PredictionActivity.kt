@@ -10,6 +10,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.college.sportsmeet.databinding.ActivityPredictionBinding
 import com.college.sportsmeet.models.PredictionRequest
 import com.college.sportsmeet.network.ApiClient
+import android.media.MediaPlayer
+import android.view.HapticFeedbackConstants
+import nl.dionsegijn.konfetti.core.Party
+import nl.dionsegijn.konfetti.core.Position
+import nl.dionsegijn.konfetti.core.emitter.Emitter
+import java.util.concurrent.TimeUnit
 import com.college.sportsmeet.repository.MatchRepository
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.delay
@@ -64,7 +70,14 @@ class PredictionActivity : AppCompatActivity() {
     }
 
     private fun setupLockPredictionsButton() {
-        binding.btnLockPredictions.setOnClickListener {
+        binding.btnLockPredictions.setOnClickListener { view ->
+            // Heavy Haptic Feedback
+            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+
+            // Play custom click sound
+            // val mediaPlayer = MediaPlayer.create(this, R.raw.custom_click)
+            // mediaPlayer?.start()
+
             val questions = adapter.currentList
             val predictionRequests = mutableListOf<PredictionRequest>()
 
@@ -125,12 +138,27 @@ class PredictionActivity : AppCompatActivity() {
                             binding.btnLockPredictions.text = "Locking..."
                         }
                         is SubmissionState.Success -> {
+                            // Trigger Rivalry Stats update in the Adapter!
+                            adapter.updateRivalryStats(state.rivalryStats)
+
                             // Execute premium success animation
                             binding.lottieSuccess.visibility = View.VISIBLE
                             binding.lottieSuccess.playAnimation()
 
-                            // Delay for 2 seconds to let the animation play before popping the backstack
-                            delay(2000)
+                            // Konfetti Explosion
+                            val party = Party(
+                                speed = 0f,
+                                maxSpeed = 30f,
+                                damping = 0.9f,
+                                spread = 360,
+                                colors = listOf(0xfce18a, 0xff726d, 0xf4306d, 0xb48def),
+                                emitter = Emitter(duration = 100, TimeUnit.MILLISECONDS).max(100),
+                                position = Position.Relative(0.5, 0.3)
+                            )
+                            binding.konfettiView.start(party)
+
+                            // Let the animations and rivalry stats display for 3.5 seconds before popping the backstack
+                            delay(3500)
                             finish()
                         }
                         is SubmissionState.Error -> {

@@ -157,7 +157,7 @@ class MatchRepository(private val apiService: ApiService) {
     /**
      * Submits bulk predictions in a single transactional request.
      */
-    suspend fun submitBulkPredictions(requests: List<PredictionRequest>): Result<GenericResponse> {
+    suspend fun submitBulkPredictions(requests: List<PredictionRequest>): Result<com.college.sportsmeet.models.SubmitPredictionResponse> {
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.submitBulkPredictions(requests)

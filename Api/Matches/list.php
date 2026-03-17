@@ -38,11 +38,18 @@ try {
             t_a.team_name AS team_a_name,
             t_a.branch_name AS team_a_branch,
             t_b.team_name AS team_b_name,
-            t_b.branch_name AS team_b_branch
+            t_b.branch_name AS team_b_branch,
+            COALESCE(p_count.total_predictions, 0) AS total_predictions
         FROM matches m
         JOIN sports s ON m.sport_id = s.id
         JOIN teams t_a ON m.team_a_id = t_a.id
         JOIN teams t_b ON m.team_b_id = t_b.id
+        LEFT JOIN (
+            SELECT q.match_id, COUNT(p.id) as total_predictions
+            FROM predictions p
+            JOIN questions q ON p.question_id = q.id
+            GROUP BY q.match_id
+        ) p_count ON m.id = p_count.match_id
         WHERE m.match_status != 'cancelled'
         ORDER BY m.start_time ASC
     ";
@@ -75,7 +82,8 @@ try {
                 'name' => $match['team_b_name'],
                 'branch' => $match['team_b_branch']
             ],
-            'start_time' => $match['start_time']
+            'start_time' => $match['start_time'],
+            'total_predictions' => (int)$match['total_predictions']
         ];
 
         // Safely assign to the correct group

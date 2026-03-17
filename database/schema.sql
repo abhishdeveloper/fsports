@@ -24,6 +24,11 @@ CREATE TABLE `users` (
   UNIQUE KEY `idx_roll_number` (`roll_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Phase 11: Gamification Additions
+ALTER TABLE `users`
+  ADD COLUMN `last_claim_time` TIMESTAMP NULL DEFAULT NULL AFTER `total_coins`,
+  ADD COLUMN `current_streak` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `last_claim_time`;
+
 -- --------------------------------------------------------
 -- Sports Table
 -- --------------------------------------------------------

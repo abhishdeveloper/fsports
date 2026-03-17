@@ -41,6 +41,25 @@ class MatchLobbyActivity : AppCompatActivity() {
         setupTabLayout()
         observeViewModel()
         checkAdminAccess()
+        checkDailyReward()
+    }
+
+    /**
+     * Checks locally if the Daily Reward Bottom Sheet should be shown today.
+     * Prevents it from popping up every time the user navigates back to the lobby.
+     */
+    private fun checkDailyReward() {
+        val sharedPrefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val lastClaimShown = sharedPrefs.getLong("last_reward_shown_time", 0)
+        val currentTime = System.currentTimeMillis()
+
+        // 24 hours in milliseconds = 86400000
+        if (currentTime - lastClaimShown > 86400000) {
+            val bottomSheet = DailyRewardBottomSheet()
+            bottomSheet.show(supportFragmentManager, DailyRewardBottomSheet.TAG)
+
+            sharedPrefs.edit().putLong("last_reward_shown_time", currentTime).apply()
+        }
     }
 
     /**

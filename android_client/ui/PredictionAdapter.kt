@@ -8,12 +8,20 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.college.sportsmeet.databinding.ItemQuestionCardBinding
 import com.college.sportsmeet.models.QuestionData
+import com.college.sportsmeet.models.RivalryStat
 
 /**
  * Adapter for handling Question Lists and their corresponding Option selections.
  * Crucially stores state inside the `QuestionData` model to survive RecyclerView recycling.
  */
 class PredictionAdapter : ListAdapter<QuestionData, PredictionAdapter.QuestionViewHolder>(QuestionDiffCallback()) {
+
+    private var rivalryStats: Map<String, RivalryStat>? = null
+
+    fun updateRivalryStats(stats: Map<String, RivalryStat>?) {
+        this.rivalryStats = stats
+        notifyDataSetChanged() // Rebind all to show stats
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): QuestionViewHolder {
         val binding = ItemQuestionCardBinding.inflate(
@@ -31,9 +39,12 @@ class PredictionAdapter : ListAdapter<QuestionData, PredictionAdapter.QuestionVi
 
         init {
             // Listen to RadioGroup changes and save directly back to the data model
-            binding.radioGroupOptions.setOnCheckedChangeListener { _, checkedId ->
+            binding.radioGroupOptions.setOnCheckedChangeListener { group, checkedId ->
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
+                    // Provide a light haptic tick (HapticFeedbackConstants.CLOCK_TICK requires API 21)
+                    group.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+
                     val question = getItem(position)
 
                     question.userSelectedOption = when (checkedId) {
@@ -84,6 +95,24 @@ class PredictionAdapter : ListAdapter<QuestionData, PredictionAdapter.QuestionVi
                     "B" -> radioOptionB.isChecked = true
                     "C" -> radioOptionC.isChecked = true
                     "D" -> radioOptionD.isChecked = true
+                }
+
+                // Handle Rivalry Stats Visibility
+                val stat = rivalryStats?.get(question.questionId.toString())
+                if (stat != null) {
+                    llRivalryStats.visibility = View.VISIBLE
+
+                    // Modify radio button text to show percentages natively next to options
+                    radioOptionA.text = "${question.optionA} (${stat.optA}%)"
+                    radioOptionB.text = "${question.optionB} (${stat.optB}%)"
+                    if (!question.optionC.isNullOrBlank()) radioOptionC.text = "${question.optionC} (${stat.optC}%)"
+                    if (!question.optionD.isNullOrBlank()) radioOptionD.text = "${question.optionD} (${stat.optD}%)"
+
+                    // Optional: Animate progressRivalryA if you want a visual bar indicator
+                    // Using option A's percentage for a simple two-way split representation.
+                    progressRivalryA.setProgressCompat(stat.optA, true)
+                } else {
+                    llRivalryStats.visibility = View.GONE
                 }
 
                 // Re-attach listener after binding

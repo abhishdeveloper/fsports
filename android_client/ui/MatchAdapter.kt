@@ -50,11 +50,12 @@ class MatchAdapter(
                 tvTeamA.text = match.teamA.name
                 tvTeamB.text = match.teamB.name
 
-                // You could use Coil to load sport icons here if the backend provided URLs
-                // ivTimeIcon.load(match.sportIconUrl) {
-                //     crossfade(true)
-                //     placeholder(R.drawable.ic_placeholder)
-                // }
+                if (match.totalPredictions > 0) {
+                    llTrending.visibility = android.view.View.VISIBLE
+                    tvTrendingCount.text = "🔥 ${match.totalPredictions} predictions locked!"
+                } else {
+                    llTrending.visibility = android.view.View.GONE
+                }
 
                 // Format the backend timestamp (e.g., "2023-10-24 14:00:00") into a readable format
                 tvStartTime.text = formatDateTime(match.startTime)

@@ -50,7 +50,7 @@ interface ApiService {
      * Submits a batch of predictions securely wrapped in a backend PDO transaction.
      */
     @POST("Api/Predictions/submit_bulk.php")
-    suspend fun submitBulkPredictions(@Body requests: List<PredictionRequest>): Response<GenericResponse>
+    suspend fun submitBulkPredictions(@Body requests: List<PredictionRequest>): Response<com.college.sportsmeet.models.SubmitPredictionResponse>
 
     /**
      * Fetches the top 50 users ranked by total coins.
@@ -65,6 +65,9 @@ interface ApiService {
 
     @GET("Api/Matches/teams.php")
     suspend fun getTeams(): Response<TeamsResponse>
+
+    @POST("Api/Rewards/daily_claim.php")
+    suspend fun claimDailyReward(): Response<com.college.sportsmeet.models.DailyClaimResponse>
 
     @POST("Api/Admin/create_match.php")
     suspend fun createMatch(@Body request: CreateMatchRequest): Response<GenericResponse>

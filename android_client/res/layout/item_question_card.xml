@@ -56,6 +56,36 @@
             android:background="?attr/colorOutlineVariant"
             app:layout_constraintTop_toBottomOf="@id/tvQuestionTitle" />
 
+        <!-- The Campus Rivalry Bar (Hidden by default) -->
+        <LinearLayout
+            android:id="@+id/llRivalryStats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/dividerTop">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Campus Prediction Split"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressRivalryA"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_marginTop="4dp"
+                app:indicatorColor="?attr/colorPrimary"
+                app:trackColor="?attr/colorSurfaceVariant"
+                app:trackCornerRadius="4dp"
+                tools:progress="70" />
+
+            <!-- You could add multiple stacked bars or a custom segmented bar here for B/C/D -->
+        </LinearLayout>
+
         <!-- RadioGroup for Options -->
         <RadioGroup
             android:id="@+id/radioGroupOptions"
@@ -63,7 +93,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:orientation="vertical"
-            app:layout_constraintTop_toBottomOf="@id/dividerTop">
+            app:layout_constraintTop_toBottomOf="@id/llRivalryStats">
 
             <com.google.android.material.radiobutton.MaterialRadioButton
                 android:id="@+id/radioOptionA"

@@ -45,7 +45,24 @@ class LeaderboardAdapter : ListAdapter<LeaderboardUser, LeaderboardAdapter.Leade
                     3 -> applyRankStyling("#CD7F32", true) // Bronze
                     else -> applyRankStyling(null, false)
                 }
+
+                // ⚔️ Campus Rivalry Detection
+                // Check if the branch above or below this one is different (meaning a fierce rivalry competition)
+                val isRivalry = checkRivalry(bindingAdapterPosition)
+                chipRivalry.visibility = if (isRivalry) View.VISIBLE else View.GONE
             }
+        }
+
+        private fun checkRivalry(position: Int): Boolean {
+            if (position == RecyclerView.NO_POSITION) return false
+
+            val currentBranch = getItem(position).branch
+
+            val prevBranch = if (position > 0) getItem(position - 1).branch else currentBranch
+            val nextBranch = if (position < itemCount - 1) getItem(position + 1).branch else currentBranch
+
+            // It's a rivalry if they are fighting closely with a different department
+            return currentBranch != prevBranch || currentBranch != nextBranch
         }
 
         private fun applyRankStyling(hexColor: String?, showIcon: Boolean) {

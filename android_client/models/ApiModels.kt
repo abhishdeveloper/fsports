@@ -12,6 +12,16 @@ data class GenericResponse(
     @SerializedName("error") val error: String?
 )
 
+// Daily Claim Response
+data class DailyClaimResponse(
+    @SerializedName("message") val message: String?,
+    @SerializedName("reward_coins") val rewardCoins: Int,
+    @SerializedName("current_streak") val currentStreak: Int,
+    @SerializedName("max_streak") val maxStreak: Int,
+    @SerializedName("hours_left") val hoursLeft: Double?, // Exists if 403
+    @SerializedName("error") val error: String?
+)
+
 // Auth Login Request & Response (login.php)
 data class LoginRequest(
     @SerializedName("email") val email: String,
@@ -48,7 +58,8 @@ data class MatchData(
     @SerializedName("status") val status: String,
     @SerializedName("team_a") val teamA: TeamData,
     @SerializedName("team_b") val teamB: TeamData,
-    @SerializedName("start_time") val startTime: String
+    @SerializedName("start_time") val startTime: String,
+    @SerializedName("total_predictions") val totalPredictions: Int
 )
 
 data class TeamData(
@@ -79,6 +90,18 @@ data class QuestionData(
 data class PredictionRequest(
     @SerializedName("question_id") val questionId: Long,
     @SerializedName("selected_option") val selectedOption: String // Expected values: "A", "B", "C", "D"
+)
+
+data class SubmitPredictionResponse(
+    @SerializedName("message") val message: String?,
+    @SerializedName("rivalry_stats") val rivalryStats: Map<String, RivalryStat>?
+)
+
+data class RivalryStat(
+    @SerializedName("A") val optA: Int,
+    @SerializedName("B") val optB: Int,
+    @SerializedName("C") val optC: Int,
+    @SerializedName("D") val optD: Int
 )
 
 // Leaderboard Top Request (top.php)
