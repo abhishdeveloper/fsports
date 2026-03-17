@@ -46,6 +46,19 @@ CREATE TABLE `teams` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
+-- Players Table (IPL 2026 Phase 10)
+-- --------------------------------------------------------
+CREATE TABLE `players` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `team_id` INT UNSIGNED NOT NULL,
+  `player_name` VARCHAR(100) NOT NULL,
+  `role` ENUM('Batsman', 'Bowler', 'All-rounder', 'Wicketkeeper') NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_team_id` (`team_id`),
+  CONSTRAINT `fk_player_team` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
 -- Matches Table
 -- --------------------------------------------------------
 CREATE TABLE `matches` (
