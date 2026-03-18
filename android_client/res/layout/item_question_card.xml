@@ -132,6 +132,19 @@
 
         </RadioGroup>
 
+        <!-- Phase 15: 2x Captain Boost Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBoost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Apply 2x Captain Boost"
+            style="@style/Widget.Material3.Button.TonalButton"
+            app:icon="@android:drawable/ic_btn_speak_now"
+            app:iconGravity="textStart"
+            app:cornerRadius="12dp"
+            app:layout_constraintTop_toBottomOf="@id/radioGroupOptions" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.material.card.MaterialCardView>

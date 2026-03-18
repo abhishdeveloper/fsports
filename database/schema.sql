@@ -175,5 +175,9 @@ CREATE TABLE `security_logs` (
   KEY `idx_ip_status_time` (`ip_address`, `status`, `attempt_time`) -- Optimized index for rate-limiting queries
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Phase 15: Gamification Booster Cards
+ALTER TABLE `predictions`
+  ADD COLUMN `is_boosted` BOOLEAN NOT NULL DEFAULT FALSE AFTER `selected_option`;
+
 COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;

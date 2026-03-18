@@ -114,19 +114,29 @@ try {
     ");
     $resolvePredictionsStmt->execute([':match_id' => $matchId]);
 
-    // 6. Award Points to Users
-    // Calculate total won points per user for this match and add them to total_coins
+    // 6. Award and Deduct Points to/from Users (Phase 15: 2x Captain Boost Logic)
+    // Positive calculations for 'won', negative calculations for 'lost' (only if boosted)
     $awardPointsStmt = $pdo->prepare("
         UPDATE users u
         JOIN (
-            SELECT p.user_id, SUM(:base_points * q.points_multiplier) as total_earned
+            SELECT
+                p.user_id,
+                SUM(
+                    CASE
+                        WHEN p.status = 'won' AND p.is_boosted = 1 THEN (:base_points * q.points_multiplier) * 2
+                        WHEN p.status = 'won' AND p.is_boosted = 0 THEN (:base_points * q.points_multiplier)
+                        WHEN p.status = 'lost' AND p.is_boosted = 1 THEN -((:base_points * q.points_multiplier) * 2)
+                        ELSE 0 -- Normal losses don't deduct points
+                    END
+                ) as total_net_earned
             FROM predictions p
             JOIN questions q ON p.question_id = q.id
-            WHERE q.match_id = :match_id AND p.status = 'won'
+            WHERE q.match_id = :match_id
             GROUP BY p.user_id
-        ) as winners ON u.id = winners.user_id
-        SET u.total_coins = u.total_coins + winners.total_earned
+        ) as match_results ON u.id = match_results.user_id
+        SET u.total_coins = GREATEST(0, u.total_coins + match_results.total_net_earned) -- Ensure coins don't go below 0
     ");
+
     $awardPointsStmt->execute([
         ':base_points' => $BASE_POINTS,
         ':match_id' => $matchId

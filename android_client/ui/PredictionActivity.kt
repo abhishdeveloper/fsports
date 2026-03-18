@@ -94,7 +94,11 @@ class PredictionActivity : AppCompatActivity() {
                         .show()
                     return@setOnClickListener
                 }
-                predictionRequests.add(PredictionRequest(question.questionId, selected))
+                predictionRequests.add(PredictionRequest(
+                    questionId = question.questionId,
+                    selectedOption = selected,
+                    isBoosted = question.isBoosted
+                ))
             }
 
             // Fire bulk submission transaction

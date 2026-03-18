@@ -39,6 +39,18 @@ if (!is_array($predictions) || empty($predictions)) {
     Response::json(400, ['error' => 'Invalid JSON payload. Expected a non-empty array of predictions.']);
 }
 
+// Phase 15: Crucial Security Check - Enforce exactly one 2x Boost per submission
+$boostCount = 0;
+foreach ($predictions as $prediction) {
+    if (isset($prediction['is_boosted']) && $prediction['is_boosted'] === true) {
+        $boostCount++;
+    }
+}
+
+if ($boostCount > 1) {
+    Response::json(400, ['error' => 'Exploit detected: You can only apply the 2x Captain Boost to ONE question per match.']);
+}
+
 // Secure logging setup
 $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/Api/Predictions/submit_bulk.php', PHP_URL_PATH);
 $ipAddress = filter_var($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0', FILTER_VALIDATE_IP) ?: '0.0.0.0';
@@ -58,13 +70,14 @@ try {
     ");
 
     $insertStmt = $pdo->prepare("
-        INSERT INTO predictions (user_id, question_id, selected_option, status)
-        VALUES (:user_id, :question_id, :selected_option, 'pending')
+        INSERT INTO predictions (user_id, question_id, selected_option, is_boosted, status)
+        VALUES (:user_id, :question_id, :selected_option, :is_boosted, 'pending')
     ");
 
     foreach ($predictions as $prediction) {
         $questionIdStr = $prediction['question_id'] ?? null;
         $selectedOption = strtoupper(trim($prediction['selected_option'] ?? ''));
+        $isBoosted = isset($prediction['is_boosted']) && $prediction['is_boosted'] === true ? 1 : 0;
 
         // Input Validation
         if ($questionIdStr === null || !filter_var($questionIdStr, FILTER_VALIDATE_INT)) {
@@ -98,7 +111,8 @@ try {
             $insertStmt->execute([
                 ':user_id' => $userId,
                 ':question_id' => $questionId,
-                ':selected_option' => $selectedOption
+                ':selected_option' => $selectedOption,
+                ':is_boosted' => $isBoosted
             ]);
         } catch (PDOException $e) {
             // Check for MySQL duplicate entry error code (1062)

@@ -88,13 +88,17 @@ data class QuestionData(
 
     // Mutable property to track user selection in the RecyclerView.
     // @Transient ensures Gson completely ignores it during serialization/deserialization.
-    @Transient var userSelectedOption: String? = null
+    @Transient var userSelectedOption: String? = null,
+
+    // Phase 15: 2x Captain Boost tracking
+    @Transient var isBoosted: Boolean = false
 )
 
 // Prediction Submission Request (submit.php)
 data class PredictionRequest(
     @SerializedName("question_id") val questionId: Long,
-    @SerializedName("selected_option") val selectedOption: String // Expected values: "A", "B", "C", "D"
+    @SerializedName("selected_option") val selectedOption: String, // Expected values: "A", "B", "C", "D"
+    @SerializedName("is_boosted") val isBoosted: Boolean
 )
 
 data class SubmitPredictionResponse(

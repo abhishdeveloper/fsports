@@ -2,6 +2,8 @@ package com.college.sportsmeet.ui
 
 import android.view.LayoutInflater
 import android.view.View
+import android.graphics.Color
+import android.view.HapticFeedbackConstants
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -17,6 +19,9 @@ import com.college.sportsmeet.models.RivalryStat
 class PredictionAdapter : ListAdapter<QuestionData, PredictionAdapter.QuestionViewHolder>(QuestionDiffCallback()) {
 
     private var rivalryStats: Map<String, RivalryStat>? = null
+
+    // Track which question ID currently holds the single 2x Boost
+    private var boostedQuestionId: Long? = null
 
     fun updateRivalryStats(stats: Map<String, RivalryStat>?) {
         this.rivalryStats = stats
@@ -128,6 +133,58 @@ class PredictionAdapter : ListAdapter<QuestionData, PredictionAdapter.QuestionVi
                             else -> null
                         }
                     }
+                }
+
+                // Phase 15: 2x Captain Boost Logic
+                btnBoost.setOnClickListener { view ->
+                    val position = bindingAdapterPosition
+                    if (position != RecyclerView.NO_POSITION) {
+                        view.performHapticFeedback(HapticFeedbackConstants.CONFIRM) // Heavy haptic
+
+                        val clickedQuestionId = getItem(position).questionId
+
+                        if (boostedQuestionId == clickedQuestionId) {
+                            // User clicked the active boost to remove it
+                            getItem(position).isBoosted = false
+                            boostedQuestionId = null
+                            notifyItemChanged(position)
+                        } else {
+                            // User clicked to boost a new question.
+                            // 1. Remove boost from old question if it exists
+                            val oldBoostedId = boostedQuestionId
+                            boostedQuestionId = clickedQuestionId
+                            getItem(position).isBoosted = true
+
+                            notifyItemChanged(position) // Update the newly boosted row
+
+                            // If another row had the boost, find its position and update it so it turns gray
+                            if (oldBoostedId != null) {
+                                val oldPosition = currentList.indexOfFirst { it.questionId == oldBoostedId }
+                                if (oldPosition != -1) {
+                                    getItem(oldPosition).isBoosted = false
+                                    notifyItemChanged(oldPosition)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // UI Styling for Boost Button
+                if (question.isBoosted) {
+                    btnBoost.setBackgroundColor(Color.parseColor("#FFD700")) // Vibrant Gold
+                    btnBoost.setTextColor(Color.BLACK)
+                    btnBoost.setIconTintResource(android.R.color.black)
+                    btnBoost.text = "2x Captain Boost Active"
+                } else {
+                    // Reset to standard gray tonal style
+                    val typedValue = android.util.TypedValue()
+                    binding.root.context.theme.resolveAttribute(com.google.android.material.R.attr.colorSecondaryContainer, typedValue, true)
+                    btnBoost.setBackgroundColor(typedValue.data)
+
+                    binding.root.context.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSecondaryContainer, typedValue, true)
+                    btnBoost.setTextColor(typedValue.data)
+                    btnBoost.setIconTintResource(com.google.android.material.R.color.design_default_color_on_secondary)
+                    btnBoost.text = "Apply 2x Captain Boost"
                 }
             }
         }
