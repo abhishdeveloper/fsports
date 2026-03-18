@@ -6,6 +6,7 @@ namespace App\Api\Admin;
 
 use App\Config\Database;
 use App\Api\Utils\Response;
+use App\Api\Utils\FirebaseHelper;
 use PDO;
 use Exception;
 
@@ -64,7 +65,43 @@ try {
          Response::json(404, ['error' => 'Match not found or status already matches the requested state.']);
     }
 
+    // Phase 14: Trigger Global Push Notification when a Match goes LIVE
+    if ($newStatus === 'live') {
+        // Fetch team names for a detailed notification
+        $teamsStmt = $pdo->prepare("
+            SELECT t_a.team_name as team_a, t_b.team_name as team_b
+            FROM matches m
+            JOIN teams t_a ON m.team_a_id = t_a.id
+            JOIN teams t_b ON m.team_b_id = t_b.id
+            WHERE m.id = :match_id
+        ");
+        $teamsStmt->execute([':match_id' => $matchId]);
+        $teams = $teamsStmt->fetch(PDO::FETCH_ASSOC);
+
+        $matchTitle = $teams ? "{$teams['team_a']} vs {$teams['team_b']} is LIVE! 🏏" : "A match is LIVE! 🏏";
+
+        // This runs asynchronously in a sense because we don't strictly care if it fails,
+        // we just log it and proceed to return 200 to the admin.
+        FirebaseHelper::sendToTopic('all_users', $matchTitle, 'Betting locks in 60 seconds! Lock your predictions now.');
+    }
+
     Response::json(200, ['message' => "Match status updated to '$newStatus'."]);
+
+    /*
+     * Note for Phase 13 (Challenges):
+     * Inside `Api/Challenges/send.php`, use this snippet to trigger a 1-on-1 notification:
+     *
+     * $fcmTokenQuery = $pdo->prepare("SELECT fcm_token FROM users WHERE id = :opponent_id");
+     * $fcmTokenQuery->execute([':opponent_id' => $opponentId]);
+     * $tokenRow = $fcmTokenQuery->fetch(PDO::FETCH_ASSOC);
+     * if ($tokenRow && !empty($tokenRow['fcm_token'])) {
+     *     \App\Api\Utils\FirebaseHelper::sendToUser(
+     *         $tokenRow['fcm_token'],
+     *         '⚔️ New Grudge Match!',
+     *         'Someone just challenged you for 500 coins. Open the app to respond!'
+     *     );
+     * }
+     */
 
 } catch (Exception $e) {
     error_log("Admin Update Match Status Error: " . $e->getMessage());

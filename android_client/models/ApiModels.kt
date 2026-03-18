@@ -12,6 +12,11 @@ data class GenericResponse(
     @SerializedName("error") val error: String?
 )
 
+// FCM Token Update Request
+data class UpdateTokenRequest(
+    @SerializedName("fcm_token") val fcmToken: String
+)
+
 // Daily Claim Response
 data class DailyClaimResponse(
     @SerializedName("message") val message: String?,

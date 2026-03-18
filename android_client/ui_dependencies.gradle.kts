@@ -1,4 +1,21 @@
+// Project-level build.gradle.kts
+/*
+buildscript {
+    dependencies {
+        // Required for Firebase
+        classpath("com.google.gms:google-services:4.4.0")
+    }
+}
+*/
+
 // app/build.gradle.kts
+
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    // Required for Firebase
+    id("com.google.gms.google-services")
+}
 
 android {
     buildFeatures {
@@ -28,4 +45,8 @@ dependencies {
 
     // Konfetti (Particle Explosions)
     implementation("nl.dionsegijn:konfetti-xml:3.0.1")
+
+    // Firebase BoM and Messaging (Phase 14)
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
 }

@@ -14,6 +14,12 @@ import retrofit2.http.Query
 interface ApiService {
 
     /**
+     * Updates the user's FCM Token for Push Notifications.
+     */
+    @POST("Api/Users/update_token.php")
+    suspend fun updateFcmToken(@Body request: com.college.sportsmeet.models.UpdateTokenRequest): Response<GenericResponse>
+
+    /**
      * Authenticates a user and returns a JSON response containing the Access Token.
      */
     @POST("Api/Auth/login.php")

@@ -11,13 +11,33 @@ import com.college.sportsmeet.databinding.ActivityMatchLobbyBinding
 import android.content.Intent
 import com.college.sportsmeet.models.MatchesResponse
 import com.college.sportsmeet.network.ApiClient
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.college.sportsmeet.repository.MatchRepository
 import com.college.sportsmeet.utils.TokenManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 
 class MatchLobbyActivity : AppCompatActivity() {
+
+    // Registering the permission launcher for Android 13+ Push Notifications
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            subscribeToGlobalMatchAlerts()
+            syncFcmToken()
+        } else {
+            // User denied push notifications. We can show an educational Snackbar.
+            Snackbar.make(binding.root, "You will miss live match alerts!", Snackbar.LENGTH_LONG).show()
+        }
+    }
+
 
     private lateinit var binding: ActivityMatchLobbyBinding
     private lateinit var adapter: MatchAdapter
@@ -44,6 +64,71 @@ class MatchLobbyActivity : AppCompatActivity() {
         checkAdminAccess()
         checkDailyReward()
         setupErrorRetry()
+        askNotificationPermission()
+    }
+
+    /**
+     * Phase 14: Android 13 (API 33) Runtime Permissions for POST_NOTIFICATIONS
+     */
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    // Already granted
+                    subscribeToGlobalMatchAlerts()
+                    syncFcmToken()
+                }
+                shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
+                    // Show educational UI before asking again
+                    Snackbar.make(binding.root, "Enable notifications to know when matches go LIVE!", Snackbar.LENGTH_INDEFINITE)
+                        .setAction("Allow") {
+                            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }.show()
+                }
+                else -> {
+                    // Ask directly
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        } else {
+            // Android 12 and below automatically grant permission at install time
+            subscribeToGlobalMatchAlerts()
+            syncFcmToken()
+        }
+    }
+
+    /**
+     * Subscribes the user to the global topic so they receive the 'Match is Live!' alerts.
+     */
+    private fun subscribeToGlobalMatchAlerts() {
+        FirebaseMessaging.getInstance().subscribeToTopic("all_users")
+            .addOnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    // Log failure silently.
+                }
+            }
+    }
+
+    /**
+     * Fetches the current FCM token manually (in case onNewToken missed it) and syncs with the PHP backend.
+     */
+    private fun syncFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) return@addOnCompleteListener
+
+            val token = task.result
+            if (token != null && TokenManager.getAccessToken() != null) {
+                lifecycleScope.launch {
+                    try {
+                        ApiClient.apiService.updateFcmToken(com.college.sportsmeet.models.UpdateTokenRequest(token))
+                    } catch (e: Exception) {
+                        // Silent fail
+                    }
+                }
+            }
+        }
     }
 
     private fun setupToolbar() {

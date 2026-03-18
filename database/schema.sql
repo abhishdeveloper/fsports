@@ -29,6 +29,10 @@ ALTER TABLE `users`
   ADD COLUMN `last_claim_time` TIMESTAMP NULL DEFAULT NULL AFTER `total_coins`,
   ADD COLUMN `current_streak` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `last_claim_time`;
 
+-- Phase 14: FCM Integration
+ALTER TABLE `users`
+  ADD COLUMN `fcm_token` VARCHAR(255) NULL AFTER `current_streak`;
+
 -- --------------------------------------------------------
 -- Sports Table
 -- --------------------------------------------------------
