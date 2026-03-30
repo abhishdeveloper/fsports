@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="../css/app.css">
+    <link rel="stylesheet" href="css/app.css">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
 </head>
 <body class="bg-gray-50 flex flex-col h-screen font-sans antialiased text-gray-900 pb-20 relative">
@@ -87,7 +87,7 @@
 
     </main>
 
-    <script src="../js/api.js"></script>
+    <script src="js/api.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -104,11 +104,12 @@
 
             document.getElementById('btnLogout').addEventListener('click', () => {
                 if (confirm('Are you sure you want to logout?')) {
-                    // Because we use HttpOnly cookies, we technically need an API endpoint to clear them securely,
-                    // but for this phase, deleting localStorage and redirecting to login simulates it until the cookie expires.
-                    // (Real production needs a /logout.php to unset the cookie header).
-                    localStorage.clear();
-                    window.location.href = 'login.html';
+                    const btn = document.getElementById('btnLogout');
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50');
+                    btn.innerHTML = `<span class="iconify animate-spin mr-1.5" data-icon="mdi:loading" data-width="18" data-height="18"></span> Logging out...`;
+
+                    Api.logout();
                 }
             });
 

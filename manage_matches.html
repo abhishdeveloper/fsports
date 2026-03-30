@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin - Manage Matches</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/app.css">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+</head>
+<body class="bg-gray-50 flex flex-col h-screen font-sans">
+
+    <header class="bg-purple-700 border-b border-purple-800 sticky top-0 z-30 shadow-sm flex items-center px-4 py-4">
+        <button onclick="window.history.back()" class="text-white hover:text-purple-200 transition-colors p-2 -ml-2 rounded-full">
+            <span class="iconify" data-icon="mdi:arrow-left" data-width="24" data-height="24"></span>
+        </button>
+        <h1 class="text-lg font-bold text-white ml-2">Manage Matches</h1>
+    </header>
+
+    <main class="flex-1 overflow-y-auto px-4 py-6">
+
+        <div id="loadingState" class="space-y-4">
+            <div class="shimmer-item h-40 w-full shimmer-card"></div>
+            <div class="shimmer-item h-40 w-full shimmer-card"></div>
+        </div>
+
+        <div id="matchesList" class="space-y-4 hidden pb-10">
+            <!-- Populated via JS -->
+        </div>
+
+    </main>
+
+    <!-- Dialog for Status Updates -->
+    <div id="actionDialog" class="hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all scale-100 flex flex-col items-center text-center">
+            <h3 id="dialogTitle" class="text-lg font-bold text-gray-900 mb-2">Manage Match</h3>
+            <p class="text-sm text-gray-500 mb-6">Select an action to perform on this match.</p>
+
+            <div class="w-full space-y-3">
+                <button id="btnLive" class="w-full px-4 py-3 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors">Mark as Live</button>
+                <button id="btnResolve" class="w-full px-4 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors">Resolve Match</button>
+                <button id="btnCancelMatch" class="w-full px-4 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors">Cancel Match</button>
+            </div>
+
+            <button id="btnCancelDialog" class="mt-6 px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-lg transition-colors w-full">Close</button>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            if (localStorage.getItem('user_role') !== 'admin') {
+                window.location.href = 'lobby.html';
+                return;
+            }
+
+            const list = document.getElementById('matchesList');
+            const loadingState = document.getElementById('loadingState');
+            const dialog = document.getElementById('actionDialog');
+
+            let currentMatchId = null;
+
+            async function loadMatches() {
+                loadingState.classList.remove('hidden');
+                list.classList.add('hidden');
+
+                try {
+                    const res = await Api.get('/Api/Matches/list.php');
+                    // Combine all tabs for admin view
+                    const allMatches = [...(res.upcoming || []), ...(res.live || []), ...(res.completed || [])];
+
+                    list.innerHTML = '';
+
+                    if (allMatches.length === 0) {
+                        list.innerHTML = '<p class="text-center text-gray-500 mt-10">No matches found.</p>';
+                    } else {
+                        allMatches.forEach(match => {
+                            const card = document.createElement('div');
+                            card.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-200 cursor-pointer active:scale-95 transition-transform";
+
+                            const badgeColor = match.status === 'upcoming' ? 'bg-blue-100 text-blue-700' :
+                                             (match.status === 'live' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700');
+
+                            card.innerHTML = `
+                                <div class="flex justify-between items-center mb-3">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500">${match.sport}</span>
+                                    <span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${badgeColor}">${match.status}</span>
+                                </div>
+                                <h3 class="text-lg font-extrabold text-gray-900">${match.team_a.name} vs ${match.team_b.name}</h3>
+                                <p class="text-xs text-gray-400 mt-1">${match.start_time}</p>
+                            `;
+
+                            card.onclick = () => {
+                                currentMatchId = match.id;
+                                document.getElementById('dialogTitle').textContent = `${match.team_a.name} vs ${match.team_b.name}`;
+                                dialog.classList.remove('hidden');
+                            };
+
+                            list.appendChild(card);
+                        });
+                    }
+
+                    loadingState.classList.add('hidden');
+                    list.classList.remove('hidden');
+
+                } catch (error) {
+                    alert("Failed to load matches: " + error);
+                    window.history.back();
+                }
+            }
+
+            // Dialog Actions
+            document.getElementById('btnCancelDialog').onclick = () => {
+                dialog.classList.add('hidden');
+                currentMatchId = null;
+            };
+
+            async function updateStatus(status) {
+                if (!currentMatchId) return;
+                try {
+                    await Api.post('/Api/Admin/update_status.php', { match_id: currentMatchId, new_status: status });
+                    alert(`Match marked as ${status}.`);
+                    dialog.classList.add('hidden');
+                    loadMatches(); // Refresh list
+                } catch (e) {
+                    alert(e);
+                }
+            }
+
+            document.getElementById('btnLive').onclick = () => updateStatus('live');
+            document.getElementById('btnCancelMatch').onclick = () => {
+                if(confirm('Are you sure you want to cancel this match?')) updateStatus('cancelled');
+            };
+
+            document.getElementById('btnResolve').onclick = () => {
+                if (!currentMatchId) return;
+                const name = document.getElementById('dialogTitle').textContent;
+                window.location.href = `resolve_match.html?match_id=${currentMatchId}&name=${encodeURIComponent(name)}`;
+            };
+
+            loadMatches();
+        });
+    </script>
+</body>
+</html>

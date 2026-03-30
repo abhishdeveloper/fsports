@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Meet</title>
+</head>
+<body>
+    <script>
+        // Check for an existing session role. If missing, assume not logged in.
+        // The API will still enforce strict HttpOnly Cookie checks regardless of this localStorage value.
+        const role = localStorage.getItem('user_role');
+        if (role) {
+            window.location.replace('lobby.html');
+        } else {
+            window.location.replace('login.html');
+        }
+    </script>
+</body>
+</html>

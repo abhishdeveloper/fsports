@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin - Resolve Match</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/app.css">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <!-- Lottie for Gamification -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+</head>
+<body class="bg-gray-50 flex flex-col h-screen font-sans antialiased text-gray-900 pb-24 relative">
+
+    <header class="bg-purple-700 border-b border-purple-800 sticky top-0 z-30 shadow-md flex items-center px-4 py-4">
+        <button id="btnBack" class="text-white hover:text-purple-200 transition-colors p-2 -ml-2 rounded-full">
+            <span class="iconify" data-icon="mdi:arrow-left" data-width="24" data-height="24"></span>
+        </button>
+        <h1 id="headerTitle" class="text-lg font-bold text-white ml-2 truncate">Resolve Match</h1>
+    </header>
+
+    <main class="flex-1 overflow-y-auto px-4 py-6" id="questionsContainer">
+
+        <div id="loadingState" class="flex justify-center items-center h-full">
+            <span class="iconify animate-spin text-purple-600" data-icon="mdi:loading" data-width="48" data-height="48"></span>
+        </div>
+
+        <form id="resolveForm" class="space-y-6 hidden pb-10">
+            <!-- Cards populated via JS -->
+        </form>
+
+    </main>
+
+    <!-- Bottom Pinned Action Bar -->
+    <div id="bottomBar" class="bottom-nav-wrapper bg-white border-t border-gray-200 p-4 hidden">
+        <button id="btnSubmit" class="w-full py-4 bg-purple-600 text-white font-bold rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center disabled:opacity-50 disabled:active:scale-100">
+            <span>Confirm Resolution</span>
+            <span id="submitSpinner" class="iconify animate-spin ml-2 hidden" data-icon="mdi:loading" data-width="20" data-height="20"></span>
+        </button>
+    </div>
+
+    <!-- Success Overlay -->
+    <div id="successOverlay" class="hidden fixed inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center">
+        <div id="lottieContainer" style="width: 250px; height: 250px;"></div>
+        <h2 class="text-2xl font-extrabold text-green-600 mt-4 tracking-tight">Match Resolved!</h2>
+        <p class="text-sm text-gray-500 mt-2">Coins have been awarded.</p>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            if (localStorage.getItem('user_role') !== 'admin') {
+                window.location.href = 'lobby.html';
+                return;
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const matchId = params.get('match_id');
+            const matchName = params.get('name');
+
+            if (!matchId) {
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            if (matchName) {
+                document.getElementById('headerTitle').textContent = "Resolve: " + matchName;
+            }
+
+            let questionsData = [];
+            let resolutions = {}; // { "question_id": "A" }
+
+            const form = document.getElementById('resolveForm');
+            const loadingState = document.getElementById('loadingState');
+            const bottomBar = document.getElementById('bottomBar');
+
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.history.back();
+            });
+
+            async function loadQuestions() {
+                loadingState.classList.remove('hidden');
+                form.classList.add('hidden');
+                bottomBar.classList.add('hidden');
+
+                try {
+                    const response = await Api.get(`/Api/Matches/questions.php?match_id=${matchId}`);
+                    questionsData = response.data || [];
+                    renderQuestions();
+                } catch (error) {
+                    alert("Failed to load questions: " + error);
+                    window.history.back();
+                }
+            }
+
+            function renderQuestions() {
+                form.innerHTML = '';
+                loadingState.classList.add('hidden');
+
+                if (questionsData.length === 0) {
+                    form.innerHTML = '<p class="text-center text-gray-500 mt-10">No questions found.</p>';
+                    form.classList.remove('hidden');
+                    return;
+                }
+
+                form.classList.remove('hidden');
+                bottomBar.classList.remove('hidden');
+
+                questionsData.forEach(q => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col relative";
+
+                    let optionsHTML = '';
+                    const options = [
+                        { id: 'A', text: q.option_a },
+                        { id: 'B', text: q.option_b },
+                        { id: 'C', text: q.option_c },
+                        { id: 'D', text: q.option_d }
+                    ];
+
+                    options.forEach(opt => {
+                        if (opt.text) {
+                            optionsHTML += `
+                                <label class="relative flex items-center p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors mb-2">
+                                    <input type="radio" name="q_${q.question_id}" value="${opt.id}" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 mr-3" required>
+                                    <div class="flex-1 flex flex-col">
+                                        <span class="text-sm font-medium text-gray-900">${opt.text}</span>
+                                    </div>
+                                </label>
+                            `;
+                        }
+                    });
+
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="bg-gray-100 text-gray-700 text-[10px] font-extrabold uppercase px-2 py-1 rounded-md tracking-wide">QID: ${q.question_id}</span>
+                        </div>
+                        <h3 class="text-base font-bold text-gray-900 mb-4 leading-snug">${q.question_text}</h3>
+                        <div class="space-y-1">
+                            ${optionsHTML}
+                        </div>
+                    `;
+                    form.appendChild(card);
+                });
+
+                // Attach listeners for selections
+                form.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        const qId = e.target.name.split('_')[1];
+                        resolutions[qId] = e.target.value;
+
+                        // Visual styling update for selected radio label
+                        document.querySelectorAll(`input[name="q_${qId}"]`).forEach(r => {
+                            r.parentElement.classList.remove('border-purple-500', 'bg-purple-50');
+                            r.parentElement.classList.add('border-gray-200');
+                        });
+                        e.target.parentElement.classList.add('border-purple-500', 'bg-purple-50');
+                        e.target.parentElement.classList.remove('border-gray-200');
+                    });
+                });
+            }
+
+            document.getElementById('btnSubmit').addEventListener('click', async () => {
+                // Validation
+                if (Object.keys(resolutions).length < questionsData.length) {
+                    alert("Please select the winning option for all questions before confirming.");
+                    return;
+                }
+
+                if (confirm("DANGER: Resolving this match will permanently award and deduct coins from all users. Proceed?") !== true) return;
+
+                const btn = document.getElementById('btnSubmit');
+                const spinner = document.getElementById('submitSpinner');
+                btn.disabled = true;
+                spinner.classList.remove('hidden');
+
+                const payload = {
+                    match_id: parseInt(matchId),
+                    resolutions: resolutions
+                };
+
+                try {
+                    const response = await Api.post('/Api/Admin/resolve_match.php', payload);
+
+                    const successOverlay = document.getElementById('successOverlay');
+                    successOverlay.classList.remove('hidden');
+
+                    setTimeout(() => {
+                        window.location.href = 'manage_matches.html';
+                    }, 3000);
+
+                } catch (errorMsg) {
+                    btn.disabled = false;
+                    spinner.classList.add('hidden');
+                    alert(errorMsg);
+                }
+            });
+
+            // Init
+            loadQuestions();
+        });
+    </script>
+</body>
+</html>

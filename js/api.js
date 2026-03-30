@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000'; // Update this to production URL later
+const API_BASE_URL = ''; // Empty string natively resolves to the current domain in a Shared Hosting environment.
 
 /**
  * A centralized wrapper around the native Fetch API to securely handle
@@ -60,5 +60,16 @@ class Api {
 
     static post(endpoint, body) {
         return this.request(endpoint, 'POST', body);
+    }
+
+    static async logout() {
+        try {
+            await this.post('/Api/Auth/logout.php', {});
+        } catch (error) {
+            console.error('Logout API failed:', error);
+        } finally {
+            localStorage.removeItem('user_role');
+            window.location.href = 'login.html';
+        }
     }
 }
