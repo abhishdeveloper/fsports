@@ -26,18 +26,20 @@ function authenticateJWT(): array
         Response::json(500, ['error' => 'Internal server error.']);
     }
 
-    $headers = getallheaders();
-    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
+    // Extract Token from HttpOnly Cookie (for Web Clients) OR Fallback to Authorization Header (for API tools like Postman)
+    $jwt = $_COOKIE['access_token'] ?? null;
 
-    if (!$authHeader) {
-        Response::json(401, ['error' => 'Missing Authorization header.']);
+    if (!$jwt) {
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
+
+        if ($authHeader && preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+            $jwt = $matches[1];
+        }
     }
 
-    // Extract Bearer token
-    if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
-        $jwt = $matches[1];
-    } else {
-        Response::json(401, ['error' => 'Invalid Authorization header format. Expected "Bearer <token>".']);
+    if (!$jwt) {
+        Response::json(401, ['error' => 'Missing authentication token. Please log in.']);
     }
 
     try {

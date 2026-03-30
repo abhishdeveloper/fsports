@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Predictions - Sports Meet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/app.css">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <!-- Lottie & Canvas Confetti for Gamification -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body class="bg-gray-50 flex flex-col h-screen font-sans antialiased text-gray-900 pb-24 relative">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm flex items-center px-4 py-4">
+        <button id="btnBack" class="text-gray-500 hover:text-gray-900 transition-colors p-2 -ml-2 rounded-full">
+            <span class="iconify" data-icon="mdi:arrow-left" data-width="24" data-height="24"></span>
+        </button>
+        <h1 id="headerTitle" class="text-lg font-bold text-gray-900 ml-2 truncate">Match Predictions</h1>
+    </header>
+
+    <main class="flex-1 overflow-y-auto px-4 py-6" id="questionsContainer">
+
+        <div id="loadingState" class="flex justify-center items-center h-full">
+            <span class="iconify animate-spin text-blue-600" data-icon="mdi:loading" data-width="48" data-height="48"></span>
+        </div>
+
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center mt-20 text-center space-y-4">
+            <span class="iconify text-gray-300" data-icon="mdi:comment-question-outline" data-width="80" data-height="80"></span>
+            <h2 class="text-lg font-bold text-gray-700">No Questions Yet</h2>
+            <p class="text-sm text-gray-500">The admin hasn't added predictions for this match.</p>
+        </div>
+
+        <div id="errorState" class="hidden flex flex-col items-center justify-center mt-20 text-center space-y-4">
+            <span class="iconify text-red-300" data-icon="mdi:alert-circle-outline" data-width="80" data-height="80"></span>
+            <h2 class="text-lg font-bold text-gray-700">Error Loading Questions</h2>
+            <p id="errorText" class="text-sm text-gray-500">Failed to load data.</p>
+            <button id="btnRetry" class="mt-4 px-6 py-2 bg-blue-100 text-blue-700 font-bold rounded-full hover:bg-blue-200 transition">Try Again</button>
+        </div>
+
+        <form id="predictionsForm" class="space-y-6 hidden pb-10">
+            <!-- Cards populated via JS -->
+        </form>
+
+    </main>
+
+    <!-- Bottom Pinned Action Bar -->
+    <div id="bottomBar" class="bottom-nav-wrapper bg-white border-t border-gray-200 p-4 hidden">
+        <button id="btnSubmit" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center disabled:opacity-50 disabled:active:scale-100">
+            <span>Lock Predictions</span>
+            <span id="submitSpinner" class="iconify animate-spin ml-2 hidden" data-icon="mdi:loading" data-width="20" data-height="20"></span>
+        </button>
+    </div>
+
+    <!-- Success Overlay -->
+    <div id="successOverlay" class="hidden fixed inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center">
+        <div id="lottieContainer" style="width: 250px; height: 250px;"></div>
+        <h2 class="text-2xl font-extrabold text-green-600 mt-4 tracking-tight">Locked In!</h2>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const params = new URLSearchParams(window.location.search);
+            const matchId = params.get('match_id');
+            const matchName = params.get('name');
+
+            if (!matchId) {
+                window.location.href = 'lobby.html';
+                return;
+            }
+
+            if (matchName) {
+                document.getElementById('headerTitle').textContent = matchName;
+            }
+
+            let questionsData = [];
+            let selections = {}; // { question_id: 'A' }
+            let boostedQuestionId = null;
+
+            const container = document.getElementById('questionsContainer');
+            const form = document.getElementById('predictionsForm');
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const errorState = document.getElementById('errorState');
+            const bottomBar = document.getElementById('bottomBar');
+
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.history.back();
+            });
+
+            async function loadQuestions() {
+                loadingState.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                errorState.classList.add('hidden');
+                form.classList.add('hidden');
+                bottomBar.classList.add('hidden');
+
+                try {
+                    const response = await Api.get(`/Api/Matches/questions.php?match_id=${matchId}`);
+                    questionsData = response.data || [];
+                    renderQuestions();
+                } catch (error) {
+                    loadingState.classList.add('hidden');
+                    errorState.classList.remove('hidden');
+                    document.getElementById('errorText').textContent = error;
+                }
+            }
+
+            function renderQuestions() {
+                form.innerHTML = '';
+                loadingState.classList.add('hidden');
+
+                if (questionsData.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                form.classList.remove('hidden');
+                bottomBar.classList.remove('hidden');
+
+                questionsData.forEach(q => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col relative";
+
+                    let optionsHTML = '';
+                    const options = [
+                        { id: 'A', text: q.option_a },
+                        { id: 'B', text: q.option_b },
+                        { id: 'C', text: q.option_c },
+                        { id: 'D', text: q.option_d }
+                    ];
+
+                    options.forEach(opt => {
+                        if (opt.text) {
+                            // The Rivalry Bar placeholder (hidden initially)
+                            const rivalryBarHtml = `
+                                <div id="rivalry-bar-${q.question_id}-${opt.id}" class="hidden w-full bg-gray-100 rounded-full h-1.5 mt-2 mb-1">
+                                    <div id="rivalry-fill-${q.question_id}-${opt.id}" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span id="rivalry-text-${q.question_id}-${opt.id}" class="hidden text-xs font-bold text-gray-400 absolute right-4 top-4">0%</span>
+                            `;
+
+                            optionsHTML += `
+                                <label class="relative flex items-center p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors mb-2">
+                                    <input type="radio" name="q_${q.question_id}" value="${opt.id}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mr-3" required>
+                                    <div class="flex-1 flex flex-col">
+                                        <span class="text-sm font-medium text-gray-900">${opt.text}</span>
+                                        ${rivalryBarHtml}
+                                    </div>
+                                </label>
+                            `;
+                        }
+                    });
+
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="bg-purple-100 text-purple-700 text-[10px] font-extrabold uppercase px-2 py-1 rounded-md tracking-wide">${q.points_multiplier}x Pts</span>
+                        </div>
+                        <h3 class="text-base font-bold text-gray-900 mb-4 leading-snug">${q.question_text}</h3>
+                        <div class="space-y-1">
+                            ${optionsHTML}
+                        </div>
+
+                        <!-- Phase 15: 2x Captain Boost Button -->
+                        <button type="button" class="boost-btn mt-4 w-full py-2.5 rounded-xl border-2 border-gray-200 text-sm font-bold text-gray-500 transition-all flex justify-center items-center gap-2 active:scale-95" data-qid="${q.question_id}">
+                            <span class="iconify" data-icon="mdi:lightning-bolt" data-width="16"></span>
+                            <span>Apply 2x Captain Boost</span>
+                        </button>
+                    `;
+                    form.appendChild(card);
+                });
+
+                // Attach listeners for selections
+                form.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        // Native web vibration (Haptics) if supported
+                        if (navigator.vibrate) navigator.vibrate(10);
+
+                        const qId = e.target.name.split('_')[1];
+                        selections[qId] = e.target.value;
+
+                        // Visual styling update for selected radio label
+                        document.querySelectorAll(`input[name="q_${qId}"]`).forEach(r => {
+                            r.parentElement.classList.remove('border-blue-500', 'bg-blue-50');
+                            r.parentElement.classList.add('border-gray-200');
+                        });
+                        e.target.parentElement.classList.add('border-blue-500', 'bg-blue-50');
+                        e.target.parentElement.classList.remove('border-gray-200');
+                    });
+                });
+
+                // Attach listeners for Boost Buttons (Phase 15)
+                document.querySelectorAll('.boost-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const targetBtn = e.currentTarget;
+                        const qId = targetBtn.getAttribute('data-qid');
+
+                        if (navigator.vibrate) navigator.vibrate(50); // Heavy haptic
+
+                        if (boostedQuestionId === qId) {
+                            // Toggle off
+                            boostedQuestionId = null;
+                            updateBoostUI();
+                        } else {
+                            // Toggle on new
+                            boostedQuestionId = qId;
+                            updateBoostUI();
+                        }
+                    });
+                });
+            }
+
+            function updateBoostUI() {
+                document.querySelectorAll('.boost-btn').forEach(btn => {
+                    const qId = btn.getAttribute('data-qid');
+                    if (qId === boostedQuestionId) {
+                        btn.classList.remove('border-gray-200', 'text-gray-500');
+                        btn.classList.add('bg-yellow-400', 'border-yellow-400', 'text-yellow-900', 'shadow-md');
+                        btn.innerHTML = `<span class="iconify" data-icon="mdi:lightning-bolt" data-width="16"></span><span>2x Captain Boost Active</span>`;
+                    } else {
+                        btn.classList.remove('bg-yellow-400', 'border-yellow-400', 'text-yellow-900', 'shadow-md');
+                        btn.classList.add('border-gray-200', 'text-gray-500');
+                        btn.innerHTML = `<span class="iconify" data-icon="mdi:lightning-bolt" data-width="16"></span><span>Apply 2x Captain Boost</span>`;
+                    }
+                });
+            }
+
+            document.getElementById('btnRetry').addEventListener('click', loadQuestions);
+
+            // Phase 6 / 11 / 15: Submission & Rivalry Logic
+            document.getElementById('btnSubmit').addEventListener('click', async () => {
+
+                // 1. Validation
+                if (Object.keys(selections).length < questionsData.length) {
+                    alert("Please answer all questions before locking.");
+                    return;
+                }
+
+                const btn = document.getElementById('btnSubmit');
+                const spinner = document.getElementById('submitSpinner');
+                btn.disabled = true;
+                spinner.classList.remove('hidden');
+
+                // 2. Build Payload
+                const payload = Object.keys(selections).map(qId => ({
+                    question_id: parseInt(qId),
+                    selected_option: selections[qId],
+                    is_boosted: (qId === boostedQuestionId)
+                }));
+
+                try {
+                    // 3. Submit Transaction
+                    const response = await Api.post('/Api/Predictions/submit_bulk.php', payload);
+
+                    if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // Success haptic
+
+                    // 4. Animate Rivalry Stats (Phase 11)
+                    if (response.rivalry_stats) {
+                        Object.keys(response.rivalry_stats).forEach(qId => {
+                            const stats = response.rivalry_stats[qId];
+                            ['A', 'B', 'C', 'D'].forEach(opt => {
+                                const bar = document.getElementById(`rivalry-bar-${qId}-${opt}`);
+                                const fill = document.getElementById(`rivalry-fill-${qId}-${opt}`);
+                                const text = document.getElementById(`rivalry-text-${qId}-${opt}`);
+
+                                if (bar && fill && text && stats[opt] !== undefined) {
+                                    bar.classList.remove('hidden');
+                                    text.classList.remove('hidden');
+                                    text.textContent = `${stats[opt]}%`;
+                                    // Animate width
+                                    setTimeout(() => {
+                                        fill.style.width = `${stats[opt]}%`;
+                                    }, 100);
+                                }
+                            });
+                        });
+                    }
+
+                    // 5. Fire Konfetti & Lottie
+                    const successOverlay = document.getElementById('successOverlay');
+                    successOverlay.classList.remove('hidden');
+
+                    // Note: In a real environment, load a valid Lottie JSON via URL
+                    // lottie.loadAnimation({ container: document.getElementById('lottieContainer'), renderer: 'svg', loop: false, autoplay: true, path: 'https://assets2.lottiefiles.com/packages/lf20_U1ku5A.json' });
+
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#FFD700', '#2563EB', '#10B981']
+                    });
+
+                    // 6. Return to Lobby after showing off the stats and animation
+                    setTimeout(() => {
+                        window.location.href = 'lobby.html';
+                    }, 3500);
+
+                } catch (errorMsg) {
+                    btn.disabled = false;
+                    spinner.classList.add('hidden');
+                    alert(errorMsg);
+                }
+            });
+
+            // Init
+            loadQuestions();
+        });
+    </script>
+</body>
+</html>

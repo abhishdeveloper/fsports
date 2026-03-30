@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rewards Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/app.css">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <!-- Lottie & Canvas Confetti for Gamification -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body class="bg-gray-50 flex flex-col h-screen font-sans antialiased text-gray-900 pb-20 relative">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm flex items-center px-4 py-4">
+        <button id="btnBack" class="text-gray-500 hover:text-gray-900 transition-colors p-2 -ml-2 rounded-full">
+            <span class="iconify" data-icon="mdi:arrow-left" data-width="24" data-height="24"></span>
+        </button>
+        <h1 class="text-lg font-bold text-gray-900 ml-2">Rewards Store</h1>
+    </header>
+
+    <nav class="bg-white border-b border-gray-200 sticky top-[60px] z-20 flex px-4">
+        <button class="tab-btn active-tab flex-1 py-3 text-center font-bold text-sm border-b-2 border-blue-600 text-blue-600" data-target="perks">Available Perks</button>
+        <button class="tab-btn flex-1 py-3 text-center font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-900 transition" data-target="passes">My Passes</button>
+    </nav>
+
+    <main class="flex-1 overflow-y-auto px-4 py-6" id="storeContainer">
+
+        <div id="loadingState" class="flex justify-center items-center h-full">
+            <span class="iconify animate-spin text-blue-600" data-icon="mdi:loading" data-width="48" data-height="48"></span>
+        </div>
+
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center mt-20 text-center space-y-4">
+            <span class="iconify text-gray-300" data-icon="mdi:gift-outline" data-width="80" data-height="80"></span>
+            <h2 id="emptyTitle" class="text-lg font-bold text-gray-700">No Rewards Available</h2>
+            <p id="emptyMessage" class="text-sm text-gray-500">Check back later for new campus perks.</p>
+        </div>
+
+        <div id="errorState" class="hidden flex flex-col items-center justify-center mt-20 text-center space-y-4">
+            <span class="iconify text-red-300" data-icon="mdi:alert-circle-outline" data-width="80" data-height="80"></span>
+            <h2 class="text-lg font-bold text-gray-700">Error Loading Store</h2>
+            <p id="errorText" class="text-sm text-gray-500">Failed to load data.</p>
+            <button id="btnRetry" class="mt-4 px-6 py-2 bg-blue-100 text-blue-700 font-bold rounded-full hover:bg-blue-200 transition">Try Again</button>
+        </div>
+
+        <div id="storeList" class="space-y-4 hidden pb-10">
+            <!-- Cards populated via JS -->
+        </div>
+
+    </main>
+
+    <!-- Success Overlay -->
+    <div id="successOverlay" class="hidden fixed inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6">
+        <div id="lottieContainer" style="width: 250px; height: 250px;"></div>
+        <h2 class="text-2xl font-extrabold text-green-600 mt-4 tracking-tight">Reward Claimed!</h2>
+        <p id="successCode" class="text-3xl font-mono bg-green-100 text-green-800 px-6 py-3 rounded-xl mt-4 font-bold tracking-widest border border-green-200"></p>
+        <p class="text-gray-500 mt-4">Show this code to campus staff.</p>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div id="confirmDialog" class="hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all scale-100">
+            <h3 id="dialogTitle" class="text-lg font-bold text-gray-900 mb-2">Confirm Purchase</h3>
+            <p id="dialogMessage" class="text-sm text-gray-500 mb-6">Are you sure you want to redeem this reward?</p>
+            <div class="flex justify-end space-x-3">
+                <button id="btnCancelDialog" class="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+                <button id="btnConfirmDialog" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center">
+                    <span>Confirm</span>
+                    <span id="dialogSpinner" class="iconify animate-spin ml-2 hidden" data-icon="mdi:loading" data-width="16" data-height="16"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            let currentTab = 'perks';
+            let currentRewardId = null;
+
+            const container = document.getElementById('storeContainer');
+            const list = document.getElementById('storeList');
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const errorState = document.getElementById('errorState');
+
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.history.back();
+            });
+            document.getElementById('btnRetry').addEventListener('click', () => loadTab(currentTab));
+
+            async function loadTab(tab) {
+                loadingState.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                errorState.classList.add('hidden');
+                list.classList.add('hidden');
+
+                try {
+                    if (tab === 'perks') {
+                        const response = await Api.get('/Api/Store/list.php');
+                        renderPerks(response.data || []);
+                    } else {
+                        const response = await Api.get('/Api/Store/my_passes.php');
+                        renderPasses(response.data || []);
+                    }
+                } catch (error) {
+                    loadingState.classList.add('hidden');
+                    errorState.classList.remove('hidden');
+                    document.getElementById('errorText').textContent = error;
+                }
+            }
+
+            function renderPerks(data) {
+                list.innerHTML = '';
+                loadingState.classList.add('hidden');
+
+                if (data.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    document.getElementById('emptyTitle').textContent = "No Rewards Available";
+                    document.getElementById('emptyMessage').textContent = "Check back later for new campus perks.";
+                    return;
+                }
+
+                list.classList.remove('hidden');
+
+                data.forEach(reward => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col";
+
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-extrabold text-gray-900 leading-tight pr-4">${reward.title}</h3>
+                            <span class="bg-red-50 text-red-600 text-[10px] font-extrabold uppercase px-2 py-1 rounded border border-red-100 whitespace-nowrap">${reward.stock_quantity} Left!</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4 leading-relaxed">${reward.description}</p>
+
+                        <button type="button" class="btn-redeem mt-auto w-full py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-bold rounded-xl transition-colors flex justify-center items-center gap-2 active:scale-95" data-rid="${reward.id}" data-title="${reward.title}" data-cost="${reward.cost}">
+                            <span class="iconify" data-icon="mdi:coins" data-width="18"></span>
+                            <span>Redeem • ${reward.cost} Coins</span>
+                        </button>
+                    `;
+                    list.appendChild(card);
+                });
+
+                attachRedeemListeners();
+            }
+
+            function renderPasses(data) {
+                list.innerHTML = '';
+                loadingState.classList.add('hidden');
+
+                if (data.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    document.getElementById('emptyTitle').textContent = "No Passes Found";
+                    document.getElementById('emptyMessage').textContent = "Redeem rewards to see your passes here.";
+                    return;
+                }
+
+                list.classList.remove('hidden');
+
+                data.forEach(pass => {
+                    const isClaimed = pass.status === 'claimed';
+                    const cardClass = isClaimed ? "bg-gray-100 border-gray-200 opacity-60" : "bg-blue-600 border-blue-700 text-white";
+                    const titleClass = isClaimed ? "text-gray-700" : "text-white";
+                    const descClass = isClaimed ? "text-gray-500" : "text-blue-100";
+                    const codeBgClass = isClaimed ? "bg-gray-200 text-gray-500 border-gray-300" : "bg-blue-700 text-white border-blue-500";
+                    const statusClass = isClaimed ? "bg-gray-300 text-gray-600" : "bg-yellow-400 text-yellow-900 shadow-sm";
+
+                    const card = document.createElement('div');
+                    card.className = `p-5 rounded-2xl shadow-sm border flex flex-col relative overflow-hidden ${cardClass}`;
+
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-extrabold ${titleClass} leading-tight pr-4">${pass.title}</h3>
+                            <span class="text-[10px] font-extrabold uppercase px-2 py-1 rounded ${statusClass} tracking-widest">${pass.status}</span>
+                        </div>
+                        <p class="text-sm ${descClass} mb-5 leading-relaxed">${pass.description}</p>
+
+                        <div class="border-t border-dashed ${isClaimed ? 'border-gray-300' : 'border-blue-400'} pt-5 mt-auto">
+                            <p class="text-[10px] uppercase tracking-widest font-bold mb-2 ${descClass} text-center">Redemption Code</p>
+                            <div class="w-full py-3 rounded-xl border flex justify-center items-center ${codeBgClass}">
+                                <span class="font-mono text-2xl font-bold tracking-[0.2em]">${pass.redemption_code}</span>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            }
+
+            // Dialog Logic
+            const dialog = document.getElementById('confirmDialog');
+            const btnCancelDialog = document.getElementById('btnCancelDialog');
+            const btnConfirmDialog = document.getElementById('btnConfirmDialog');
+            const dialogSpinner = document.getElementById('dialogSpinner');
+
+            function attachRedeemListeners() {
+                document.querySelectorAll('.btn-redeem').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const target = e.currentTarget;
+                        currentRewardId = target.getAttribute('data-rid');
+                        const title = target.getAttribute('data-title');
+                        const cost = target.getAttribute('data-cost');
+
+                        document.getElementById('dialogTitle').textContent = `Redeem ${title}?`;
+                        document.getElementById('dialogMessage').textContent = `This will deduct ${cost} coins from your balance.`;
+
+                        dialog.classList.remove('hidden');
+                    });
+                });
+            }
+
+            btnCancelDialog.addEventListener('click', () => {
+                dialog.classList.add('hidden');
+                currentRewardId = null;
+            });
+
+            btnConfirmDialog.addEventListener('click', async () => {
+                if (!currentRewardId) return;
+
+                btnConfirmDialog.disabled = true;
+                dialogSpinner.classList.remove('hidden');
+
+                try {
+                    const response = await Api.post('/Api/Store/redeem.php', { reward_id: parseInt(currentRewardId) });
+
+                    dialog.classList.add('hidden');
+                    btnConfirmDialog.disabled = false;
+                    dialogSpinner.classList.add('hidden');
+
+                    showSuccess(response.redemption_code);
+
+                } catch (errorMsg) {
+                    btnConfirmDialog.disabled = false;
+                    dialogSpinner.classList.add('hidden');
+                    alert(errorMsg);
+                    dialog.classList.add('hidden');
+                }
+            });
+
+            function showSuccess(code) {
+                const overlay = document.getElementById('successOverlay');
+                document.getElementById('successCode').textContent = code;
+                overlay.classList.remove('hidden');
+
+                // Lottie placeholder (would use real JSON URL)
+                // lottie.loadAnimation(...)
+
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#FFD700', '#2563EB', '#10B981']
+                });
+
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    // Switch to passes tab
+                    document.querySelectorAll('.tab-btn')[1].click();
+                }, 4000);
+            }
+
+            // Tab Logic
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab-btn').forEach(t => {
+                        t.classList.remove('border-blue-600', 'text-blue-600');
+                        t.classList.add('border-transparent', 'text-gray-500');
+                    });
+
+                    e.target.classList.remove('border-transparent', 'text-gray-500');
+                    e.target.classList.add('border-blue-600', 'text-blue-600');
+
+                    currentTab = e.target.getAttribute('data-target');
+                    loadTab(currentTab);
+                });
+            });
+
+            // Init
+            loadTab(currentTab);
+        });
+    </script>
+</body>
+</html>

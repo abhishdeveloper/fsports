@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/app.css">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+</head>
+<body class="bg-gray-50 flex flex-col h-screen font-sans antialiased text-gray-900 pb-20 relative">
+
+    <header class="bg-purple-700 border-b border-purple-800 sticky top-0 z-30 shadow-md flex items-center px-4 py-4">
+        <button id="btnBack" class="text-white hover:text-purple-200 transition-colors p-2 -ml-2 rounded-full">
+            <span class="iconify" data-icon="mdi:arrow-left" data-width="24" data-height="24"></span>
+        </button>
+        <h1 class="text-lg font-bold text-white ml-2 flex items-center">
+            <span class="iconify mr-2" data-icon="mdi:security" data-width="20" data-height="20"></span>
+            Command Center
+        </h1>
+    </header>
+
+    <main class="flex-1 overflow-y-auto px-4 py-6" id="adminContainer">
+
+        <div class="space-y-4">
+
+            <!-- Create Match Action -->
+            <button id="btnCreateMatch" class="w-full bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center active:scale-95 transition-transform hover:bg-gray-50">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="iconify text-blue-600" data-icon="mdi:calendar-plus" data-width="24" data-height="24"></span>
+                </div>
+                <div class="text-left flex-1">
+                    <h2 class="text-lg font-extrabold text-gray-900">Create New Match</h2>
+                    <p class="text-sm text-gray-500">Schedule an upcoming event.</p>
+                </div>
+                <span class="iconify text-gray-400" data-icon="mdi:chevron-right" data-width="24" data-height="24"></span>
+            </button>
+
+            <!-- Manage Matches Action -->
+            <button id="btnManageMatches" class="w-full bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center active:scale-95 transition-transform hover:bg-gray-50">
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="iconify text-purple-600" data-icon="mdi:gamepad-variant" data-width="24" data-height="24"></span>
+                </div>
+                <div class="text-left flex-1">
+                    <h2 class="text-lg font-extrabold text-gray-900">Manage Active Matches</h2>
+                    <p class="text-sm text-gray-500">Lock betting, update status, and resolve points.</p>
+                </div>
+                <span class="iconify text-gray-400" data-icon="mdi:chevron-right" data-width="24" data-height="24"></span>
+            </button>
+
+            <!-- Run Seeder Action -->
+            <button id="btnRunSeeder" class="w-full bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center active:scale-95 transition-transform hover:bg-gray-50">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="iconify text-red-600" data-icon="mdi:database-refresh" data-width="24" data-height="24"></span>
+                </div>
+                <div class="text-left flex-1">
+                    <h2 class="text-lg font-extrabold text-red-700">Wipe & Seed IPL 2026</h2>
+                    <p class="text-sm text-red-400">Danger: Deletes all current data and resets database.</p>
+                </div>
+                <span id="seederSpinner" class="iconify animate-spin text-red-600 hidden" data-icon="mdi:loading" data-width="24" data-height="24"></span>
+            </button>
+
+        </div>
+
+    </main>
+
+    <script src="../js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Strict Role Check
+            const role = localStorage.getItem('user_role');
+            if (role !== 'admin') {
+                alert('Unauthorized Access');
+                window.location.href = 'lobby.html';
+                return;
+            }
+
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.history.back();
+            });
+
+            document.getElementById('btnCreateMatch').addEventListener('click', () => {
+                alert('Navigating to Create Match Form (To be built next)');
+            });
+
+            document.getElementById('btnManageMatches').addEventListener('click', () => {
+                alert('Navigating to Manage Matches List (To be built next)');
+            });
+
+            document.getElementById('btnRunSeeder').addEventListener('click', async () => {
+                if (confirm('DANGER: This will delete ALL current matches, teams, users, and predictions. Type "CONFIRM" to proceed.') !== true) {
+                    return;
+                }
+
+                const btn = document.getElementById('btnRunSeeder');
+                const spinner = document.getElementById('seederSpinner');
+                btn.disabled = true;
+                spinner.classList.remove('hidden');
+
+                try {
+                    const response = await Api.post('/Api/Admin/seed_ipl_2026.php', {});
+                    alert(`Success: ${response.message}\n${response.details}`);
+                } catch (error) {
+                    alert(`Seeder Failed: ${error}`);
+                } finally {
+                    btn.disabled = false;
+                    spinner.classList.add('hidden');
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>

@@ -101,25 +101,37 @@ try {
     // Log the successful login attempt
     logSecurityEvent($pdo, $ipAddress, $requestUri, 'success');
 
+    // Set Access Token as an HttpOnly, Secure cookie for XSS protection in Web Browsers
+    setcookie(
+        'access_token',
+        $accessToken,
+        [
+            'expires' => $accessExpiration,
+            'path' => '/',
+            'domain' => $_SERVER['HTTP_HOST'] ?? '',
+            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => true,
+            'samesite' => 'Strict'
+        ]
+    );
+
     // Set Refresh Token as an HttpOnly, Secure cookie
-    // Cookie options: lifetime 7 days, path '/', domain defaults to current, Secure, HttpOnly, SameSite Strict
     setcookie(
         'refresh_token',
         $refreshToken,
         [
             'expires' => $refreshExpiration,
             'path' => '/',
-            'domain' => $_SERVER['HTTP_HOST'] ?? '', // Limit domain if possible
-            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off', // Enable 'Secure' if HTTPS
+            'domain' => $_SERVER['HTTP_HOST'] ?? '',
+            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
             'httponly' => true,
             'samesite' => 'Strict'
         ]
     );
 
-    // Return the Access Token in JSON response
+    // Return success to the web client
     Response::json(200, [
         'message' => 'Login successful',
-        'access_token' => $accessToken,
         'expires_in' => 15 * 60, // seconds
         'role' => $user['role']
     ]);

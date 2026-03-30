@@ -20,6 +20,7 @@ class Response
         header("Access-Control-Allow-Origin: " . $allowedOrigin);
         header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
         header("Access-Control-Allow-Headers: Content-Type, Authorization");
+        header("Access-Control-Allow-Credentials: true"); // REQUIRED for HttpOnly cookies
         header("Content-Type: application/json; charset=UTF-8");
         header("Access-Control-Max-Age: 3600");
 

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Match Lobby - Sports Meet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/app.css">
+    <!-- Iconify SVG Framework for lightweight icons -->
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+</head>
+<body class="bg-gray-50 flex flex-col h-screen font-sans antialiased text-gray-900 pb-20"> <!-- pb-20 prevents bottom-nav overlap -->
+
+    <!-- Top App Bar -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm flex items-center justify-between px-6 py-4">
+        <h1 class="text-xl font-extrabold text-blue-600">Match Lobby</h1>
+        <div class="flex items-center space-x-4">
+            <button id="btnRewards" class="text-yellow-500 hover:scale-110 transition-transform">
+                <span class="iconify" data-icon="mdi:star-circle" data-width="28" data-height="28"></span>
+            </button>
+            <button id="btnProfile" class="text-gray-500 hover:text-blue-600 transition-colors">
+                <span class="iconify" data-icon="mdi:account-circle" data-width="28" data-height="28"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Tab Layout -->
+    <nav class="bg-white border-b border-gray-200 sticky top-[60px] z-20 flex px-4">
+        <button class="tab-btn active-tab flex-1 py-3 text-center font-bold text-sm border-b-2 border-blue-600 text-blue-600" data-target="upcoming">Upcoming</button>
+        <button class="tab-btn flex-1 py-3 text-center font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-900 transition" data-target="live">Live</button>
+        <button class="tab-btn flex-1 py-3 text-center font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-900 transition" data-target="completed">Completed</button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto px-4 py-6" id="matchContainer">
+
+        <!-- Shimmer Loading State -->
+        <div id="loadingState" class="space-y-4">
+            <div class="shimmer-item h-32 w-full shimmer-card"></div>
+            <div class="shimmer-item h-32 w-full shimmer-card"></div>
+            <div class="shimmer-item h-32 w-full shimmer-card"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center mt-20 text-center space-y-4">
+            <span class="iconify text-gray-300" data-icon="mdi:stadium-variant" data-width="80" data-height="80"></span>
+            <h2 class="text-lg font-bold text-gray-700">No Matches Found</h2>
+            <p class="text-sm text-gray-500">Check back later for new events.</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden flex flex-col items-center justify-center mt-20 text-center space-y-4">
+            <span class="iconify text-red-300" data-icon="mdi:wifi-off" data-width="80" data-height="80"></span>
+            <h2 class="text-lg font-bold text-gray-700">Connection Error</h2>
+            <p id="errorText" class="text-sm text-gray-500">Failed to load data.</p>
+            <button id="btnRetry" class="mt-4 px-6 py-2 bg-blue-100 text-blue-700 font-bold rounded-full hover:bg-blue-200 transition">Try Again</button>
+        </div>
+
+        <!-- Match Cards List -->
+        <div id="matchesList" class="space-y-4 hidden pb-10">
+            <!-- Populated via JS -->
+        </div>
+
+    </main>
+
+    <!-- Admin FAB (Hidden by Default) -->
+    <button id="fabAdmin" class="hidden fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-2xl shadow-xl transition-all z-50">
+        <span class="iconify" data-icon="mdi:cogs" data-width="24" data-height="24"></span>
+    </button>
+
+    <script src="../js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            let allMatches = { upcoming: [], live: [], completed: [] };
+            let currentTab = 'upcoming';
+
+            const matchContainer = document.getElementById('matchesList');
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const errorState = document.getElementById('errorState');
+            const errorText = document.getElementById('errorText');
+
+            // 1. Role-Based Access Control (Admin FAB)
+            const role = localStorage.getItem('user_role');
+            if (role === 'admin') {
+                const fab = document.getElementById('fabAdmin');
+                fab.classList.remove('hidden');
+                fab.addEventListener('click', () => window.location.href = 'admin.html');
+            }
+
+            // 2. Fetch Matches
+            async function loadMatches() {
+                loadingState.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                errorState.classList.add('hidden');
+                matchContainer.classList.add('hidden');
+
+                try {
+                    allMatches = await Api.get('/Api/Matches/list.php');
+                    renderMatches(currentTab);
+                } catch (error) {
+                    loadingState.classList.add('hidden');
+                    errorState.classList.remove('hidden');
+                    errorText.textContent = error;
+                }
+            }
+
+            // 3. Render Match Cards dynamically
+            function renderMatches(status) {
+                matchContainer.innerHTML = '';
+                loadingState.classList.add('hidden');
+
+                const matches = allMatches[status] || [];
+
+                if (matches.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    matchContainer.classList.add('hidden');
+                    return;
+                }
+
+                emptyState.classList.add('hidden');
+                matchContainer.classList.remove('hidden');
+
+                matches.forEach(match => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-4 rounded-2xl shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-transform flex flex-col relative";
+
+                    // Match Routing via click
+                    card.onclick = () => {
+                        const name = encodeURIComponent(`${match.team_a.name} vs ${match.team_b.name}`);
+                        window.location.href = `prediction.html?match_id=${match.id}&name=${name}`;
+                    };
+
+                    // Format Timestamp
+                    const dateObj = new Date(match.start_time + " UTC");
+                    const timeStr = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+                    // Trending Badge logic
+                    let trendingHTML = '';
+                    if (match.total_predictions > 0) {
+                        trendingHTML = `
+                            <div class="flex items-center space-x-1.5 mt-2 bg-red-50 self-start px-2 py-0.5 rounded-full border border-red-100">
+                                <span class="pulsing-dot"></span>
+                                <span class="text-xs font-bold text-red-600">${match.total_predictions} predictions locked!</span>
+                            </div>
+                        `;
+                    }
+
+                    // Format Status Badge
+                    const statusColors = {
+                        upcoming: "bg-blue-100 text-blue-700",
+                        live: "bg-green-100 text-green-700",
+                        completed: "bg-gray-100 text-gray-700"
+                    };
+                    const badgeClass = statusColors[match.status] || statusColors.completed;
+
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold uppercase tracking-wider text-gray-500">${match.sport}</span>
+                            <span class="text-[10px] font-bold uppercase px-2 py-1 rounded-md ${badgeClass}">${match.status}</span>
+                        </div>
+
+                        ${trendingHTML}
+
+                        <div class="flex justify-between items-center mt-4 px-2">
+                            <div class="text-center w-5/12">
+                                <h3 class="font-extrabold text-gray-900 leading-tight">${match.team_a.name}</h3>
+                                ${match.team_a.branch ? `<p class="text-xs text-gray-500 mt-0.5">${match.team_a.branch}</p>` : ''}
+                            </div>
+                            <div class="w-2/12 flex justify-center text-xs font-bold text-gray-400 italic">VS</div>
+                            <div class="text-center w-5/12">
+                                <h3 class="font-extrabold text-gray-900 leading-tight">${match.team_b.name}</h3>
+                                ${match.team_b.branch ? `<p class="text-xs text-gray-500 mt-0.5">${match.team_b.branch}</p>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                            <div class="flex items-center space-x-1">
+                                <span class="iconify" data-icon="mdi:clock-outline" data-width="14"></span>
+                                <span>${timeStr}</span>
+                            </div>
+                            <span class="iconify text-gray-400" data-icon="mdi:chevron-right" data-width="18"></span>
+                        </div>
+                    `;
+                    matchContainer.appendChild(card);
+                });
+            }
+
+            // 4. Tab Navigation Logic
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Update active styling
+                    document.querySelectorAll('.tab-btn').forEach(t => {
+                        t.classList.remove('border-blue-600', 'text-blue-600');
+                        t.classList.add('border-transparent', 'text-gray-500');
+                    });
+
+                    e.target.classList.remove('border-transparent', 'text-gray-500');
+                    e.target.classList.add('border-blue-600', 'text-blue-600');
+
+                    currentTab = e.target.getAttribute('data-target');
+                    renderMatches(currentTab);
+                });
+            });
+
+            // Handlers
+            document.getElementById('btnRetry').addEventListener('click', loadMatches);
+            document.getElementById('btnProfile').addEventListener('click', () => window.location.href = 'profile.html');
+            document.getElementById('btnRewards').addEventListener('click', () => window.location.href = 'store.html');
+
+            // Init
+            loadMatches();
+        });
+    </script>
+</body>
+</html>
