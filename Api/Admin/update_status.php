@@ -6,7 +6,6 @@ namespace App\Api\Admin;
 
 use App\Config\Database;
 use App\Api\Utils\Response;
-use App\Api\Utils\FirebaseHelper;
 use PDO;
 use Exception;
 
@@ -80,28 +79,10 @@ try {
 
         $matchTitle = $teams ? "{$teams['team_a']} vs {$teams['team_b']} is LIVE! 🏏" : "A match is LIVE! 🏏";
 
-        // This runs asynchronously in a sense because we don't strictly care if it fails,
-        // we just log it and proceed to return 200 to the admin.
-        FirebaseHelper::sendToTopic('all_users', $matchTitle, 'Betting locks in 60 seconds! Lock your predictions now.');
+        // Push Notifications disabled in Zero-Dependency Shared Hosting Mode
     }
 
     Response::json(200, ['message' => "Match status updated to '$newStatus'."]);
-
-    /*
-     * Note for Phase 13 (Challenges):
-     * Inside `Api/Challenges/send.php`, use this snippet to trigger a 1-on-1 notification:
-     *
-     * $fcmTokenQuery = $pdo->prepare("SELECT fcm_token FROM users WHERE id = :opponent_id");
-     * $fcmTokenQuery->execute([':opponent_id' => $opponentId]);
-     * $tokenRow = $fcmTokenQuery->fetch(PDO::FETCH_ASSOC);
-     * if ($tokenRow && !empty($tokenRow['fcm_token'])) {
-     *     \App\Api\Utils\FirebaseHelper::sendToUser(
-     *         $tokenRow['fcm_token'],
-     *         '⚔️ New Grudge Match!',
-     *         'Someone just challenged you for 500 coins. Open the app to respond!'
-     *     );
-     * }
-     */
 
 } catch (Exception $e) {
     error_log("Admin Update Match Status Error: " . $e->getMessage());

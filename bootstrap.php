@@ -6,40 +6,42 @@ declare(strict_types=1);
 ini_set('display_errors', '0'); // Do not display raw errors to clients
 error_reporting(E_ALL);         // Log everything to server log
 
-$autoloadPath = __DIR__ . '/vendor/autoload.php';
-
-if (!file_exists($autoloadPath)) {
+// Load the secure static configuration
+$credentialsPath = __DIR__ . '/Config/credentials.php';
+if (!file_exists($credentialsPath)) {
+    error_log("Missing Config/credentials.php file. Check documentation.");
     header('HTTP/1.1 500 Internal Server Error');
-    exit('Autoloader not found. Please run composer install.');
+    exit('A critical configuration error occurred.');
 }
+require_once $credentialsPath;
 
-require_once $autoloadPath;
+/**
+ * Custom Zero-Dependency PSR-4 Autoloader
+ * Replaces Composer's vendor/autoload.php for Shared Hosting compatibility.
+ * Automatically loads any class in the 'App\' namespace based on its directory path.
+ */
+spl_autoload_register(function ($class) {
+    // Project-specific namespace prefix
+    $prefix = 'App\\';
 
-// Load environment variables securely
-$envPath = __DIR__;
-if (file_exists($envPath . '/.env')) {
-    try {
-        $dotenv = Dotenv\Dotenv::createImmutable($envPath);
-        $dotenv->load();
+    // Base directory for the namespace prefix
+    $base_dir = __DIR__ . '/';
 
-        // Validate required variables
-        $dotenv->required(['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS']);
-    } catch (Exception $e) {
-        error_log("Dotenv Error: " . $e->getMessage());
-        header('HTTP/1.1 500 Internal Server Error');
-        exit('A configuration loading error occurred.');
+    // Does the class use the namespace prefix?
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return; // No, move to the next registered autoloader
     }
-} else {
-    // Fallback if environment variables are provided by the server environment directly
-    if (!isset($_ENV['DB_NAME'])) {
-        $_ENV['DB_HOST'] = getenv('DB_HOST');
-        $_ENV['DB_PORT'] = getenv('DB_PORT');
-        $_ENV['DB_NAME'] = getenv('DB_NAME');
-        $_ENV['DB_USER'] = getenv('DB_USER');
-        $_ENV['DB_PASS'] = getenv('DB_PASS');
-        $_ENV['DB_CHARSET'] = getenv('DB_CHARSET');
-        $_ENV['JWT_ACCESS_SECRET'] = getenv('JWT_ACCESS_SECRET');
-        $_ENV['JWT_REFRESH_SECRET'] = getenv('JWT_REFRESH_SECRET');
-        $_ENV['ALLOWED_ORIGIN'] = getenv('ALLOWED_ORIGIN');
+
+    // Get the relative class name
+    $relative_class = substr($class, $len);
+
+    // Replace the namespace prefix with the base directory, replace namespace
+    // separators with directory separators, append with .php
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+
+    // If the file exists, require it
+    if (file_exists($file)) {
+        require $file;
     }
-}
+});

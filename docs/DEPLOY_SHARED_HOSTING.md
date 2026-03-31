@@ -4,20 +4,19 @@ This guide contains the exact steps required to take this repository and safely 
 
 ---
 
-## Task 1: Prepare the Local Files
+## Task 1: Prepare the Local Files (Zero-Dependency)
+
+This project has been completely refactored to require **zero external dependencies**. There is no need to run Composer or configure `.env` files.
 
 1. **Download the Repository:** Download this codebase as a ZIP file to your local computer and extract it.
-2. **Install Composer Dependencies:** Shared hosting environments rarely have terminal access to run Composer commands easily.
-    * Open your local terminal, navigate to the extracted project folder, and run:
-    ```bash
-    composer install --no-dev --optimize-autoloader
-    ```
-    * *This generates the `vendor/` folder.*
-3. **Configure the `.env` File:**
-    * Rename `.env.example` to `.env`.
-    * Update the `DB_HOST`, `DB_NAME`, `DB_USER`, and `DB_PASS` with the real credentials you will create in Step 2.
-    * Set highly secure, random strings for `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`.
+2. **Configure the Credentials:**
+    * Navigate to the `Config/` directory.
+    * Rename `credentials.example.php` to `credentials.php`.
+    * Open `credentials.php` in any text editor.
+    * Update the `DB_HOST` (usually `localhost`), `DB_NAME`, `DB_USER`, and `DB_PASS` with the real credentials you will create in Step 2.
+    * Set highly secure, long random strings for `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`.
     * Set `ALLOWED_ORIGIN` to your actual domain name (e.g., `https://yoursite.com`).
+    * Save and close the file.
 
 ---
 
@@ -46,15 +45,13 @@ This guide contains the exact steps required to take this repository and safely 
 4. On the left side (Local site), navigate to your prepared local project folder.
 5. Select **ALL files and folders** in your project directory:
     * `Api/`
-    * `Config/`
+    * `Config/` (Make sure `credentials.php` is inside)
     * `css/`
     * `database/`
     * `docs/`
     * `js/`
     * `tests/`
-    * `vendor/`
-    * `.env` (CRITICAL: Make sure your FTP client is set to show hidden files)
-    * `.htaccess` (CRITICAL: This secures your `.env` and `Api` folders from hackers)
+    * `.htaccess` (CRITICAL: This secures your `Config` folder and databases from hackers)
     * `*.html` (login.html, lobby.html, index.html, etc.)
     * `bootstrap.php`
 6. Drag and drop them into the `public_html` directory on the remote server. Wait for the upload to finish completely.

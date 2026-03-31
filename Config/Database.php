@@ -37,16 +37,16 @@ class Database
     public static function getConnection(): PDO
     {
         if (self::$instance === null) {
-            $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
-            $port = $_ENV['DB_PORT'] ?? '3306';
-            $dbName = $_ENV['DB_NAME'] ?? '';
-            $charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
-            $user = $_ENV['DB_USER'] ?? '';
-            $pass = $_ENV['DB_PASS'] ?? '';
+            $host = defined('DB_HOST') ? DB_HOST : '127.0.0.1';
+            $port = defined('DB_PORT') ? DB_PORT : '3306';
+            $dbName = defined('DB_NAME') ? DB_NAME : '';
+            $charset = defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4';
+            $user = defined('DB_USER') ? DB_USER : '';
+            $pass = defined('DB_PASS') ? DB_PASS : '';
 
             if (empty($dbName) || empty($user)) {
                 // Do not output detailed errors to the client in production
-                error_log("Database configuration is incomplete.");
+                error_log("Database configuration is incomplete. Please check Config/credentials.php.");
                 header('HTTP/1.1 500 Internal Server Error');
                 exit('A critical configuration error occurred.');
             }

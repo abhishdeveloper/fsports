@@ -6,7 +6,7 @@ namespace App\Api\Auth;
 
 use App\Config\Database;
 use App\Api\Utils\Response;
-use Firebase\JWT\JWT;
+use App\Api\Utils\JwtHelper;
 use PDOException;
 use Exception;
 
@@ -18,10 +18,10 @@ if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST')
     Response::json(405, ['error' => 'Method Not Allowed']);
 }
 
-// Ensure JWT secrets are loaded via Dotenv
-if (!isset($_ENV['JWT_ACCESS_SECRET']) || !isset($_ENV['JWT_REFRESH_SECRET'])) {
+// Ensure JWT secrets are loaded via credentials
+if (!defined('JWT_ACCESS_SECRET') || !defined('JWT_REFRESH_SECRET')) {
     // Log configuration error internally
-    error_log('JWT secrets missing from environment variables.');
+    error_log('JWT secrets missing from configuration.');
     Response::json(500, ['error' => 'Internal server error.']);
 }
 
@@ -88,8 +88,8 @@ try {
         'exp' => $refreshExpiration,
     ];
 
-    $accessToken = JWT::encode($accessTokenPayload, $_ENV['JWT_ACCESS_SECRET'], 'HS256');
-    $refreshToken = JWT::encode($refreshTokenPayload, $_ENV['JWT_REFRESH_SECRET'], 'HS256');
+    $accessToken = JwtHelper::encode($accessTokenPayload, JWT_ACCESS_SECRET);
+    $refreshToken = JwtHelper::encode($refreshTokenPayload, JWT_REFRESH_SECRET);
 
     // Store the refresh token securely in the DB
     $updateStmt = $pdo->prepare("UPDATE users SET refresh_token = :refresh_token WHERE id = :id");

@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Api\Middleware;
 
 use App\Api\Utils\Response;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+use App\Api\Utils\JwtHelper;
 use Exception;
 
 // Bootstrap Application
@@ -20,9 +19,9 @@ require_once __DIR__ . '/../../bootstrap.php';
  */
 function authenticateJWT(): array
 {
-    // Ensure JWT secrets are loaded via Dotenv
-    if (!isset($_ENV['JWT_ACCESS_SECRET'])) {
-        error_log('JWT_ACCESS_SECRET missing from environment variables.');
+    // Ensure JWT secrets are loaded via credentials
+    if (!defined('JWT_ACCESS_SECRET')) {
+        error_log('JWT_ACCESS_SECRET missing from configuration.');
         Response::json(500, ['error' => 'Internal server error.']);
     }
 
@@ -43,22 +42,28 @@ function authenticateJWT(): array
     }
 
     try {
-        // Decode and verify the signature using the HS256 algorithm
-        $decoded = JWT::decode($jwt, new Key($_ENV['JWT_ACCESS_SECRET'], 'HS256'));
+        // Decode and verify the signature using our custom zero-dependency helper
+        $decoded = JwtHelper::decode($jwt, JWT_ACCESS_SECRET);
 
         // Return the payload
-        return (array) $decoded;
-    } catch (\Firebase\JWT\ExpiredException $e) {
-        // Log expiration internally for debugging if needed
-        error_log("JWT Expired: " . $e->getMessage());
-        Response::json(401, ['error' => 'Token has expired.']);
-    } catch (\Firebase\JWT\SignatureInvalidException $e) {
-        // Log invalid signatures as potential tampering attempts
-        error_log("JWT Invalid Signature: " . $e->getMessage());
-        Response::json(401, ['error' => 'Invalid token signature.']);
+        return $decoded;
     } catch (Exception $e) {
+        $msg = $e->getMessage();
+
+        // Log expiration internally for debugging if needed
+        if (strpos($msg, 'expired') !== false) {
+            error_log("JWT Expired: " . $msg);
+            Response::json(401, ['error' => 'Token has expired.']);
+        }
+
+        // Log invalid signatures as potential tampering attempts
+        if (strpos($msg, 'signature') !== false) {
+            error_log("JWT Invalid Signature: " . $msg);
+            Response::json(401, ['error' => 'Invalid token signature.']);
+        }
+
         // Log other JWT decoding exceptions securely
-        error_log("JWT Decode Error: " . $e->getMessage());
+        error_log("JWT Decode Error: " . $msg);
         Response::json(401, ['error' => 'Unauthorized or invalid token.']);
     }
 }

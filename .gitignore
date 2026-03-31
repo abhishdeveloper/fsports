@@ -1,1 +1,2 @@
-vendor/
+# Ignore local credentials file to prevent accidentally uploading localhost configs
+Config/credentials.php

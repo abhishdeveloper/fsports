@@ -14,8 +14,8 @@ class Response
      */
     public static function json(int $statusCode, array $data): void
     {
-        // Load allowed origin from environment or default to '*'
-        $allowedOrigin = $_ENV['ALLOWED_ORIGIN'] ?? '*';
+        // Load allowed origin from credentials configuration or default to '*'
+        $allowedOrigin = defined('ALLOWED_ORIGIN') ? ALLOWED_ORIGIN : '*';
 
         header("Access-Control-Allow-Origin: " . $allowedOrigin);
         header("Access-Control-Allow-Methods: POST, GET, OPTIONS");

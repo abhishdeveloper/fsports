@@ -21,7 +21,7 @@ Options -Indexes
 # ----------------------------------------------------------------------
 # These directories contain PHP logic and configurations that should never
 # be accessed directly via a browser URL (e.g., yoursite.com/Config/Database.php)
-<DirectoryMatch "^.*/(Api|Config|database|vendor|tests|docs)/.*$">
+<DirectoryMatch "^.*/(Config|database|vendor|tests|docs)/.*$">
     Require all denied
 </DirectoryMatch>
 
