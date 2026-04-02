@@ -44,13 +44,20 @@ class Api {
             }
 
             if (!response.ok) {
-                return Promise.reject(data.error || 'An unexpected error occurred.');
+                // If the backend threw a failsafe 500 error containing 'details' (like a database configuration typo)
+                // append it so the user can debug their shared hosting setup visually.
+                let errorMsg = data.error || 'An unexpected error occurred.';
+                if (data.details) {
+                    errorMsg += `: ${data.details}`;
+                }
+                return Promise.reject(errorMsg);
             }
 
             return data;
         } catch (error) {
             console.error(`API Error on ${endpoint}:`, error);
-            throw error;
+            // If the network completely fails (e.g. server down or .htaccess block), catch it here
+            throw error instanceof TypeError ? "Failed to connect to the server. Check your connection or .htaccess configuration." : error;
         }
     }
 

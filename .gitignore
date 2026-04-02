@@ -1,2 +1,2 @@
 # Ignore local credentials file to prevent accidentally uploading localhost configs
-Config/credentials.php
+# Config/credentials.php # Removing this so the live file ships with the repo for plug-and-play

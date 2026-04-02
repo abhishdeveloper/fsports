@@ -2,16 +2,47 @@
 
 declare(strict_types=1);
 
-// Error Handling configuration
-ini_set('display_errors', '0'); // Do not display raw errors to clients
-error_reporting(E_ALL);         // Log everything to server log
+// ----------------------------------------------------------------------
+// Global Error & Exception Handlers (Failsafe JSON Output)
+// ----------------------------------------------------------------------
+// Instead of a blank 500 HTML page, we catch all fatal errors and throw
+// strict JSON so the frontend Javascript can actually read and display the issue.
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
 
-// Load the secure static configuration
+function customExceptionHandler($exception) {
+    header('Content-Type: application/json; charset=UTF-8');
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'Critical System Error',
+        'details' => $exception->getMessage()
+    ]);
+    exit;
+}
+
+function customErrorHandler($errno, $errstr, $errfile, $errline) {
+    // Only throw Exceptions for fatal errors to be caught by our Exception Handler
+    if (error_reporting() & $errno) {
+        throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+    }
+    return false;
+}
+
+set_exception_handler('customExceptionHandler');
+set_error_handler('customErrorHandler');
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error !== null && in_array($error['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE])) {
+        customExceptionHandler(new \ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']));
+    }
+});
+
+// ----------------------------------------------------------------------
+// Load Configurations
+// ----------------------------------------------------------------------
 $credentialsPath = __DIR__ . '/Config/credentials.php';
 if (!file_exists($credentialsPath)) {
-    error_log("Missing Config/credentials.php file. Check documentation.");
-    header('HTTP/1.1 500 Internal Server Error');
-    exit('A critical configuration error occurred.');
+    throw new \Exception("Missing Config/credentials.php file. The application cannot start.");
 }
 require_once $credentialsPath;
 

@@ -1,54 +1,22 @@
+# Bulletproof Shared Hosting Configuration
+# Removed complex DirectoryMatch and FilesMatch rules that frequently cause
+# 500 Internal Server Errors on strict HestiaCP/cPanel configurations if AllowOverride is disabled.
+
 # Disable directory browsing globally
 Options -Indexes
 
 # ----------------------------------------------------------------------
-# Security: Block access to hidden files and directories
-# ----------------------------------------------------------------------
-<FilesMatch "^\.">
-    Require all denied
-</FilesMatch>
-
-# Explicitly block access to the .env file containing database passwords
-<Files ".env">
-    Require all denied
-</Files>
-<Files ".env.example">
-    Require all denied
-</Files>
-
-# ----------------------------------------------------------------------
-# Security: Block access to internal backend directories
-# ----------------------------------------------------------------------
-# These directories contain PHP logic and configurations that should never
-# be accessed directly via a browser URL (e.g., yoursite.com/Config/Database.php)
-<DirectoryMatch "^.*/(Config|database|vendor|tests|docs)/.*$">
-    Require all denied
-</DirectoryMatch>
-
-# ----------------------------------------------------------------------
-# Security: Block access to raw SQL, JSON, and Log files
-# ----------------------------------------------------------------------
-<FilesMatch "\.(sql|log|sh|json|lock)$">
-    Require all denied
-</FilesMatch>
-
-# ----------------------------------------------------------------------
-# Security: Block access to the Composer files
-# ----------------------------------------------------------------------
-<Files "composer.json">
-    Require all denied
-</Files>
-<Files "composer.lock">
-    Require all denied
-</Files>
-
-# ----------------------------------------------------------------------
-# URL Rewriting (Optional: For clean URLs if needed in the future)
+# Clean URLs and Routing
 # ----------------------------------------------------------------------
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    # Uncomment and modify rules below if you want to strip .html extensions
+
+    # Optional: Force HTTPS
+    # RewriteCond %{HTTPS} off
+    # RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # If the request is not a file or directory, let the frontend handle it
     # RewriteCond %{REQUEST_FILENAME} !-f
     # RewriteCond %{REQUEST_FILENAME} !-d
-    # RewriteRule ^([^\.]+)$ $1.html [NC,L]
+    # RewriteRule ^(.*)$ index.html [L]
 </IfModule>

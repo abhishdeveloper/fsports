@@ -45,10 +45,8 @@ class Database
             $pass = defined('DB_PASS') ? DB_PASS : '';
 
             if (empty($dbName) || empty($user)) {
-                // Do not output detailed errors to the client in production
-                error_log("Database configuration is incomplete. Please check Config/credentials.php.");
-                header('HTTP/1.1 500 Internal Server Error');
-                exit('A critical configuration error occurred.');
+                // Throw exception so bootstrap catches it and formats it beautifully as JSON
+                throw new Exception("Database configuration is incomplete. Please configure Config/credentials.php with your cPanel Database name and user.");
             }
 
             $dsn = sprintf(
@@ -73,10 +71,8 @@ class Database
             try {
                 self::$instance = new PDO($dsn, $user, $pass, $options);
             } catch (PDOException $e) {
-                // Log the actual error, but don't expose it to the client
-                error_log("Database Connection Error: " . $e->getMessage());
-                header('HTTP/1.1 500 Internal Server Error');
-                exit('A database connection error occurred.');
+                // Throw explicit connection errors for the frontend to render to the admin setting up the app
+                throw new Exception("Database Connection Failed: " . $e->getMessage());
             }
         }
 
