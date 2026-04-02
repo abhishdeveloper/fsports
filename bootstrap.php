@@ -36,12 +36,16 @@ spl_autoload_register(function ($class) {
     // Get the relative class name
     $relative_class = substr($class, $len);
 
-    // Replace the namespace prefix with the base directory, replace namespace
-    // separators with directory separators, append with .php
+    // CRITICAL: Linux (HestiaCP) is case-sensitive!
+    // Our folders are named 'Api' and 'Config', but namespaces are typically standard cased
+    // Make sure we convert backslashes to forward slashes correctly
     $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
 
     // If the file exists, require it
     if (file_exists($file)) {
         require $file;
+    } else {
+        // Log explicitly if the autoloader fails to find the class on Linux
+        error_log("Autoloader Error: Class '$class' not found at '$file'");
     }
 });
